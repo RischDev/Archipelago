@@ -3,6 +3,13 @@ import typing
 from BaseClasses import Location
 from .Names.LocationName import LocationName
 
+class LocationType(str, enum):
+    BlueMysteryData = "bmd"
+    PurpleMysteryData = "pmd"
+    OverWorld = "overworld"
+    Request = "request"
+    LottoCode = "lotto"
+    Boss = "boss"
 
 class LocationData:
     name: str = ""
@@ -11,20 +18,23 @@ class LocationData:
     flag_byte: int = 0x2000030
     flag_mask: int = 0x01
 
-    text_archive_address: int = 0x00
+    type: LocationType
+
+    update_address: int = 0x00
     text_script_index: int = 0
     text_box_indices: typing.List[int] = [0]
     inject_name: bool = False
     hint_flag: int = None
     hint_flag_mask: int = None
 
-    def __init__(self, name, id, flag, mask, text_archive_address=0x0, text_script_index=0x0,
+    def __init__(self, name, id, flag, mask, type, update_address=0x0, text_script_index=0x0,
                  text_box_indices=None, inject_name=False, hint_flag=None, hint_flag_mask=None):
         self.name = name
         self.id = id
         self.flag_byte = flag
         self.flag_mask = mask
-        self.text_archive_address = text_archive_address
+        self.type = type
+        self.update_address = update_address
         self.text_script_index = text_script_index
         if text_box_indices is None:
             text_box_indices = [0]
@@ -39,324 +49,332 @@ class MMBN6Location(Location):
 
 
 bmds = [
-    LocationData(LocationName.ACDC_1_Southwest_BMD,         0xb31000, 0x020001d0, 0x40, 0x7643B8, 231, [1]),
-    LocationData(LocationName.ACDC_1_Northeast_BMD,         0xb31001, 0x020001d0, 0x80, 0x7643B8, 230, [1]),
-    LocationData(LocationName.ACDC_2_Center_BMD,            0xb31002, 0x20001d1, 0x40, 0x7658FC, 231, [1]),
-    LocationData(LocationName.ACDC_2_North_BMD,             0xb31003, 0x20001d1, 0x80, 0x7658FC, 230, [1]),
-    LocationData(LocationName.ACDC_3_Southwest_BMD,         0xb31004, 0x20001d2, 0x80, 0x766AE0, 230, [1]),
-    LocationData(LocationName.ACDC_3_Northeast_BMD,         0xb31005, 0x20001d2, 0x40, 0x766AE0, 231, [1]),
-    LocationData(LocationName.SciLab_1_WWW_BMD,             0xb31006, 0x20001d8, 0x40, 0x7694B4, 231, [1]),
-    LocationData(LocationName.SciLab_1_East_BMD,            0xb31007, 0x20001d8, 0x80, 0x7694B4, 230, [1]),
-    LocationData(LocationName.SciLab_2_West_BMD,            0xb31008, 0x20001d9, 0x80, 0x76A4F4, 230, [1, 2]),
-    LocationData(LocationName.SciLab_2_South_BMD,           0xb31009, 0x20001d9, 0x40, 0x76A4F4, 231, [1]),
-    LocationData(LocationName.Yoka_1_North_BMD,             0xb3100a, 0x20001e0, 0x80, 0x76D1B0, 230, [1]),
-    LocationData(LocationName.Yoka_1_WWW_BMD,               0xb3100b, 0x20001e0, 0x20, 0x76D1B0, 232, [1]),
-    LocationData(LocationName.Yoka_2_Upper_BMD,             0xb3100c, 0x20001e1, 0x40, 0x76DC80, 231, [1]),
-    LocationData(LocationName.Yoka_2_Lower_BMD,             0xb3100d, 0x20001e1, 0x80, 0x76DC80, 230, [1]),
-    LocationData(LocationName.Beach_1_BMD,                  0xb3100e, 0x20001e8, 0x80, 0x76FF68, 230, [1]),
-    LocationData(LocationName.Beach_2_West_BMD,             0xb3100f, 0x20001e9, 0x80, 0x770A90, 230, [1]),
-    LocationData(LocationName.Beach_2_East_BMD,             0xb31010, 0x20001e9, 0x40, 0x770A90, 231, [1, 2]),
-    LocationData(LocationName.Undernet_1_South_BMD,         0xb31011, 0x20001f0, 0x80, 0x77307C, 230, [1]),
-    LocationData(LocationName.Undernet_1_WWW_BMD,           0xb31012, 0x20001f0, 0x40, 0x77307C, 231, [1]),
-    LocationData(LocationName.Undernet_2_Upper_BMD,         0xb31013, 0x20001f1, 0x80, 0x773700, 230, [1, 2]),
-    LocationData(LocationName.Undernet_2_Lower_BMD,         0xb31014, 0x20001f1, 0x40, 0x773700, 231, [1]),
-    LocationData(LocationName.Undernet_3_South_BMD,         0xb31015, 0x20001f2, 0x40, 0x773EA8, 231, [1]),
-    LocationData(LocationName.Undernet_3_Central_BMD,       0xb31016, 0x20001f2, 0x80, 0x773EA8, 230, [1]),
-    LocationData(LocationName.Undernet_4_Bottom_West_BMD,   0xb31017, 0x20001f3, 0x40, 0x7746C8, 231, [1]),
-    LocationData(LocationName.Undernet_4_Top_Pillar_BMD,    0xb31018, 0x20001f3, 0x20, 0x7746C8, 232, [1]),
-    LocationData(LocationName.Undernet_4_Top_North_BMD,     0xb31019, 0x20001f3, 0x80, 0x7746C8, 230, [1]),
-    LocationData(LocationName.Undernet_5_Upper_BMD,         0xb3101a, 0x20001f4, 0x40, 0x774FC8, 231, [1]),
-    LocationData(LocationName.Undernet_5_Lower_BMD,         0xb3101b, 0x20001f4, 0x80, 0x774FC8, 230, [1]),
-    LocationData(LocationName.Undernet_6_East_BMD,          0xb3101c, 0x20001f5, 0x80, 0x775390, 230, [1, 2]),
-    LocationData(LocationName.Undernet_6_Central_BMD,       0xb3101d, 0x20001f5, 0x20, 0x775390, 232, [1]),
-    LocationData(LocationName.Undernet_6_TV_BMD,            0xb3101e, 0x20001f5, 0x40, 0x775390, 231, [1]),
-    LocationData(LocationName.Undernet_7_West_BMD,          0xb3101f, 0x20001f6, 0x80, 0x775934, 230, [1]),
-    LocationData(LocationName.Undernet_7_Northwest_BMD,     0xb31020, 0x20001f6, 0x20, 0x775934, 232, [1]),
-    LocationData(LocationName.Undernet_7_Northeast_BMD,     0xb31021, 0x20001f6, 0x40, 0x775934, 231, [1]),
-    LocationData(LocationName.Secret_1_South_BMD,           0xb31022, 0x2000200, 0x40, 0x7771CC, 241, [1]),
-    LocationData(LocationName.Secret_1_Northeast_BMD,       0xb31023, 0x2000200, 0x20, 0x7771CC, 242, [1]),
-    LocationData(LocationName.Secret_1_Northwest_BMD,       0xb31024, 0x2000200, 0x80, 0x7771CC, 240, [1]),
-    LocationData(LocationName.Secret_2_Upper_BMD,           0xb31025, 0x2000201, 0x80, 0x777888, 240, [1]),
-    LocationData(LocationName.Secret_2_Lower_BMD,           0xb31026, 0x2000201, 0x20, 0x777888, 242, [1]),
-    LocationData(LocationName.Secret_2_Island_BMD,          0xb31027, 0x2000201, 0x40, 0x777888, 241, [1]),
-    LocationData(LocationName.Secret_3_South_BMD,           0xb31028, 0x2000202, 0x80, 0x777EDC, 240, [1]),
-    LocationData(LocationName.Secret_3_Island_BMD,          0xb31029, 0x2000202, 0x40, 0x777EDC, 241, [1]),
-    LocationData(LocationName.Secret_3_BugFrag_BMD,         0xb3102a, 0x2000202, 0x20, 0x777EDC, 242, [1]),
-    LocationData(LocationName.School_1_Entrance_BMD,        0xb3102b, 0x2000208, 0x2, 0x759BF8, 237, [1, 2]),
-    LocationData(LocationName.School_1_North_Central_BMD,   0xb3102c, 0x2000208, 0x4, 0x759BF8, 236, [1]),
-    LocationData(LocationName.School_1_Far_West_BMD_2,      0xb3102d, 0x2000208, 0x1, 0x759BF8, 238, [1]),
-    LocationData(LocationName.School_2_Entrance_BMD,        0xb3102e, 0x2000209, 0x4, 0x75A0B4, 236, [1]),
-    LocationData(LocationName.School_2_South_BMD,           0xb3102f, 0x2000209, 0x1, 0x75A0B4, 238, [1]),
-    LocationData(LocationName.School_2_Mainframe_BMD,       0xb31030, 0x2000209, 0x2, 0x75A0B4, 237, [1]),
-    LocationData(LocationName.Zoo_1_East_BMD,               0xb31031, 0x2000210, 0x80, 0x75A7F8, 230, [1]),
-    LocationData(LocationName.Zoo_1_Central_BMD,            0xb31032, 0x2000210, 0x20, 0x75A7F8, 232, [1]),
-    LocationData(LocationName.Zoo_1_North_BMD,              0xb31033, 0x2000210, 0x40, 0x75A7F8, 231, [1]),
-    LocationData(LocationName.Zoo_2_East_BMD,               0xb31034, 0x2000211, 0x40, 0x75ADA8, 231, [1]),
-    LocationData(LocationName.Zoo_2_Central_BMD,            0xb31035, 0x2000211, 0x80, 0x75ADA8, 230, [1]),
-    LocationData(LocationName.Zoo_2_West_BMD,               0xb31036, 0x2000211, 0x20, 0x75ADA8, 232, [1]),
-    LocationData(LocationName.Zoo_3_North_BMD,              0xb31037, 0x2000212, 0x10, 0x75B5EC, 238, [1]),
-    LocationData(LocationName.Zoo_3_Central_BMD,            0xb31038, 0x2000212, 0x80, 0x75B5EC, 235, [1]),
-    LocationData(LocationName.Zoo_3_Path_BMD,               0xb31039, 0x2000212, 0x40, 0x75B5EC, 236, [1]),
-    LocationData(LocationName.Zoo_3_Northwest_BMD,          0xb3103a, 0x2000212, 0x20, 0x75B5EC, 237, [1]),
-    LocationData(LocationName.Zoo_4_West_BMD,               0xb3103b, 0x2000213, 0x40, 0x75BEB0, 236, [1, 2]),
-    LocationData(LocationName.Zoo_4_Northwest_BMD,          0xb3103c, 0x2000213, 0x80, 0x75BEB0, 235, [1]),
-    LocationData(LocationName.Zoo_4_Southeast_BMD,          0xb3103d, 0x2000213, 0x20, 0x75BEB0, 237, [1]),
-    LocationData(LocationName.Hades_South_BMD,              0xb3103e, 0x20001eb, 0x20, 0x772898, 232, [1]),
-    LocationData(LocationName.Hospital_1_North_BMD,         0xb3103f, 0x2000218, 0x20, 0x75C864, 232, [1]),
-    LocationData(LocationName.Hospital_1_Center_BMD,        0xb31040, 0x2000218, 0x80, 0x75C864, 230, [1]),
-    LocationData(LocationName.Hospital_1_West_BMD,          0xb31041, 0x2000218, 0x40, 0x75C864, 231, [1, 2]),
-    LocationData(LocationName.Hospital_2_Southwest_BMD,     0xb31042, 0x2000219, 0x20, 0x75CD64, 232, [1]),
-    LocationData(LocationName.Hospital_2_Central_BMD,       0xb31043, 0x2000219, 0x40, 0x75CD64, 231, [1]),
-    LocationData(LocationName.Hospital_2_Island_BMD,        0xb31044, 0x2000219, 0x80, 0x75CD64, 230, [1]),
-    LocationData(LocationName.Hospital_3_Central_BMD,       0xb31045, 0x200021a, 0x80, 0x75D004, 230, [1]),
-    LocationData(LocationName.Hospital_3_West_BMD,          0xb31046, 0x200021a, 0x40, 0x75D004, 231, [1]),
-    LocationData(LocationName.Hospital_3_Northwest_BMD,     0xb31047, 0x200021a, 0x20, 0x75D004, 232, [1, 2]),
-    LocationData(LocationName.Hospital_4_Central_BMD,       0xb31048, 0x200021b, 0x20, 0x75D1BC, 232, [1]),
-    LocationData(LocationName.Hospital_4_Southeast_BMD,     0xb31049, 0x200021b, 0x80, 0x75D1BC, 230, [1]),
-    LocationData(LocationName.Hospital_4_North_BMD,         0xb3104a, 0x200021b, 0x40, 0x75D1BC, 231, [1]),
-    LocationData(LocationName.Hospital_5_Southwest_BMD,     0xb3104b, 0x200021c, 0x20, 0x75D3DC, 232, [1]),
-    LocationData(LocationName.Hospital_5_Northeast_BMD,     0xb3104c, 0x200021c, 0x80, 0x75D3DC, 230, [1]),
-    LocationData(LocationName.Hospital_5_Island_BMD,        0xb3104d, 0x200021c, 0x40, 0x75D3DC, 231, [1]),
-    LocationData(LocationName.WWW_1_Central_BMD,            0xb3104e, 0x2000220, 0x10, 0x75D630, 233, [1]),
-    LocationData(LocationName.WWW_1_West_BMD,               0xb3104f, 0x2000220, 0x40, 0x75D630, 231, [1]),
-    LocationData(LocationName.WWW_1_East_BMD,               0xb31050, 0x2000220, 0x20, 0x75D630, 232, [1]),
-    LocationData(LocationName.WWW_2_East_BMD,               0xb31051, 0x2000221, 0x40, 0x75D790, 231, [1, 2]),
-    LocationData(LocationName.WWW_2_Northwest_BMD,          0xb31052, 0x2000221, 0x20, 0x75D790, 232, [1]),
-    LocationData(LocationName.WWW_3_East_BMD,               0xb31053, 0x2000222, 0x40, 0x75D8EC, 231, [1]),
-    LocationData(LocationName.WWW_3_North_BMD,              0xb31054, 0x2000222, 0x20, 0x75D8EC, 232, [1]),
-    LocationData(LocationName.WWW_4_Northwest_BMD,          0xb31055, 0x2000223, 0x40, 0x75DA68, 231, [1]),
-    LocationData(LocationName.WWW_4_Central_BMD,            0xb31056, 0x2000223, 0x20, 0x75DA68, 232, [1]),
-    LocationData(LocationName.ACDC_Dog_House_BMD,           0xb31057, 0x2000240, 0x80, 0x7608E4, 230, [1]),
-    LocationData(LocationName.ACDC_Lans_Security_Panel_BMD, 0xb31058, 0x2000242, 0x80, 0x761954, 230, [1]),
-    LocationData(LocationName.ACDC_Yais_Phone_BMD,          0xb31059, 0x2000244, 0x8, 0x762A04, 230, [1]),
-    LocationData(LocationName.ACDC_NumberMan_Display_BMD,   0xb3105a, 0x2000248, 0x8, 0x763AB4, 230, [1]),
-    LocationData(LocationName.ACDC_Tank_BMD_1,              0xb3105b, 0x2000247, 0x40, 0x7635FC, 231, [1, 2]),
-    LocationData(LocationName.ACDC_Tank_BMD_2,              0xb3105c, 0x2000247, 0x80, 0x7635FC, 230, [1]),
-    LocationData(LocationName.ACDC_School_Server_BMD_1,     0xb3105d, 0x2000242, 0x8, 0x761AC0, 230, [1]),
-    LocationData(LocationName.ACDC_School_Server_BMD_2,     0xb3105e, 0x2000242, 0x4, 0x761AC0, 231, [1]),
-    LocationData(LocationName.ACDC_School_Blackboard_BMD,   0xb3105f, 0x2000240, 0x8, 0x760B48, 230, [1, 2]),
-    LocationData(LocationName.SciLab_Vending_Machine_BMD,   0xb31060, 0x2000241, 0x80, 0x760E80, 230, [1, 2]),
-    LocationData(LocationName.SciLab_Virus_Lab_Door_BMD_1,  0xb31061, 0x2000249, 0x8, 0x763ED8, 230, [1]),
-    LocationData(LocationName.SciLab_Virus_Lab_Door_BMD_2,  0xb310ed, 0x2000249, 0x4, 0x763ED8, 231, [1]),
-    LocationData(LocationName.SciLab_Dads_Computer_BMD,     0xb31062, 0x2000241, 0x8, 0x761498, 230, [1]),
-    LocationData(LocationName.Yoka_Armor_BMD,               0xb31063, 0x2000248, 0x80, 0x763908, 230, [1, 2]),
-    LocationData(LocationName.Yoka_TV_BMD,                  0xb31064, 0x2000247, 0x8, 0x76377C, 230, [1]),
-    LocationData(LocationName.Yoka_Hot_Spring_BMD,          0xb31065, 0x200024b, 0x20, 0x7603F8, 230, [1]),
-    LocationData(LocationName.Yoka_Ticket_Machine_BMD,      0xb31066, 0x2000246, 0x8, 0x763420, 230, [1, 2]),
-    LocationData(LocationName.Yoka_Giraffe_BMD,             0xb31067, 0x200024b, 0x80, 0x7602E8, 230, [1]),
-    LocationData(LocationName.Yoka_Panda_BMD,               0xb31068, 0x2000249, 0x80, 0x763C88, 230, [1, 2]),
-    LocationData(LocationName.Beach_Hospital_Bed_BMD,       0xb31069, 0x2000245, 0x8, 0x76312C, 230, [1, 2]),
-    LocationData(LocationName.Beach_TV_BMD,                 0xb3106a, 0x2000245, 0x80, 0x762CF0, 230, [1]),
-    LocationData(LocationName.Beach_Vending_Machine_BMD,    0xb3106b, 0x2000246, 0x80, 0x7632B4, 230, [1]),
-    LocationData(LocationName.Beach_News_Van_BMD,           0xb3106c, 0x2000243, 0x80, 0x761C10, 230, [1]),
-    LocationData(LocationName.Beach_Battle_Console_BMD,     0xb3106d, 0x2000243, 0x8, 0x761E00, 230, [1]),
-    LocationData(LocationName.Beach_Security_System_BMD,    0xb3106e, 0x2000244, 0x40, 0x76274C, 231, [1, 2]),
-    LocationData(LocationName.Beach_Broadcast_Computer_BMD, 0xb3106f, 0x200024b, 0x2, 0x7606E4, 230, [1]),
-    LocationData(LocationName.Hades_Gargoyle_BMD,           0xb31070, 0x200024b, 0x8, 0x76059C, 230, [1]),
-    LocationData(LocationName.WWW_Wall_BMD,                 0xb31071, 0x200024a, 0x80, 0x7641A4, 230, [1]),
-    LocationData(LocationName.Mayls_HP_BMD,                 0xb31072, 0x2000239, 0x80, 0x75DCC4, 230, [1]),
-    LocationData(LocationName.Yais_HP_BMD_1,                0xb31073, 0x200023b, 0x80, 0x75E018, 230, [1]),
-    LocationData(LocationName.Yais_HP_BMD_2,                0xb31074, 0x200023b, 0x40, 0x75E018, 231, [1, 2]),
-    LocationData(LocationName.Dexs_HP_BMD_1,                0xb31075, 0x200023a, 0x40, 0x75DEA4, 231, [1]),
-    LocationData(LocationName.Dexs_HP_BMD_2,                0xb31076, 0x200023a, 0x80, 0x75DEA4, 230, [1]),
-    LocationData(LocationName.Tamakos_HP_BMD,               0xb31077, 0x200023c, 0x80, 0x75E2D4, 230, [1]),
-    LocationData(LocationName.Undernet_7_Upper_BMD,         0xb31078, 0x20001f6, 0x1, 0x775934, 250, [1]),
-    LocationData(LocationName.School_1_KeyDataA_BMD,        0xb31079, 0x2000208, 0x80, 0x759BF8, 230, [1]),
-    LocationData(LocationName.School_1_KeyDataB_BMD,        0xb3107a, 0x2000208, 0x40, 0x759BF8, 231, [1]),
-    LocationData(LocationName.School_1_KeyDataC_BMD,        0xb3107b, 0x2000208, 0x20, 0x759BF8, 232, [1]),
-    LocationData(LocationName.School_2_CodeC_BMD,           0xb3107c, 0x2000209, 0x20, 0x75A0B4, 232, [1]),
-    LocationData(LocationName.School_2_CodeA_BMD,           0xb3107d, 0x2000209, 0x80, 0x75A0B4, 230, [1]),
-    LocationData(LocationName.School_2_CodeB_BMD,           0xb3107e, 0x2000209, 0x40, 0x75A0B4, 231, [1]),
-    # LocationData(LocationName.Hades_HadesKey_BMD,           0xb3107f, 0x20001eb, 0x40, 0x772898, 231, [1]),
-    # LocationData(LocationName.WWW_1_South_BMD,              0xb31080, 0x2000220, 0x80, 0x75D630, 230, [1]),
-    # LocationData(LocationName.WWW_2_West_BMD,               0xb31081, 0x2000221, 0x80, 0x75D790, 230, [1]),
-    # LocationData(LocationName.WWW_3_South_BMD,              0xb31082, 0x2000222, 0x80, 0x75D8EC, 230, [1]),
-    # LocationData(LocationName.WWW_4_East_BMD,               0xb31083, 0x2000223, 0x80, 0x75DA68, 230, [1])
+    LocationData(LocationName.Robot_Control_Comp_1_BMD_1,     0xB61001, 0x02001F24, 0x80, LocationType.BlueMysteryData, 0x080A13C4)
+    LocationData(LocationName.Robot_Control_Comp_1_BMD_2,     0xB61002, 0x02001F24, 0x40, LocationType.BlueMysteryData, 0x080A13D0)
+    LocationData(LocationName.Robot_Control_Comp_2_BMD_1,     0xB61003, 0x02001F25, 0x80, LocationType.BlueMysteryData, 0x080A14C8)
+    LocationData(LocationName.Robot_Control_Comp_2_BMD_2,     0xB61004, 0x02001F25, 0x40, LocationType.BlueMysteryData, 0x080A14D4)
+    LocationData(LocationName.Aquarium_Comp_1_BMD_1,          0xB61005, 0x02001F28, 0x80, LocationType.BlueMysteryData, 0x080A1610)
+    LocationData(LocationName.Aquarium_Comp_1_BMD_2,          0xB61006, 0x02001F28, 0x40, LocationType.BlueMysteryData, 0x080A161C)
+    LocationData(LocationName.Aquarium_Comp_2_BMD_1,          0xB61007, 0x02001F29, 0x80, LocationType.BlueMysteryData, 0x080A1714)
+    LocationData(LocationName.Aquarium_Comp_2_BMD_2,          0xB61008, 0x02001F29, 0x40, LocationType.BlueMysteryData, 0x080A1720)
+    LocationData(LocationName.Aquarium_Comp_3_BMD_1,          0xB61009, 0x02001F2A, 0x80, LocationType.BlueMysteryData, 0x080A1818)
+    LocationData(LocationName.Aquarium_Comp_3_BMD_2,          0xB6100A, 0x02001F2A, 0x40, LocationType.BlueMysteryData, 0x080A1824)
+    LocationData(LocationName.JudgeTree_Comp_1_BMD_1,         0xB6100B, 0x02001F2C, 0x80, LocationType.BlueMysteryData, 0x080A1960)
+    LocationData(LocationName.JudgeTree_Comp_1_BMD_2,         0xB6100C, 0x02001F2C, 0x40, LocationType.BlueMysteryData, 0x080A196C)
+    LocationData(LocationName.JudgeTree_Comp_2_BMD_1,         0xB6100D, 0x02001F2D, 0x80, LocationType.BlueMysteryData, 0x080A1A64)
+    LocationData(LocationName.JudgeTree_Comp_2_BMD_2,         0xB6100E, 0x02001F2D, 0x40, LocationType.BlueMysteryData, 0x080A1A70)
+    LocationData(LocationName.JudgeTree_Comp_3_BMD_1,         0xB6100F, 0x02001F2E, 0x80, LocationType.BlueMysteryData, 0x080A1B68)
+    LocationData(LocationName.JudgeTree_Comp_3_BMD_2,         0xB61010, 0x02001F2E, 0x40, LocationType.BlueMysteryData, 0x080A1B74)
+    LocationData(LocationName.Mr_Weather_Comp_1_BMD_1,        0xB61011, 0x02001F30, 0x80, LocationType.BlueMysteryData, 0x080A1CB0)
+    LocationData(LocationName.Mr_Weather_Comp_1_BMD_2,        0xB61012, 0x02001F30, 0x40, LocationType.BlueMysteryData, 0x080A1CBC)
+    LocationData(LocationName.Mr_Weather_Comp_2_BMD_1,        0xB61013, 0x02001F31, 0x80, LocationType.BlueMysteryData, 0x080A1DB4)
+    LocationData(LocationName.Mr_Weather_Comp_2_BMD_2,        0xB61014, 0x02001F31, 0x40, LocationType.BlueMysteryData, 0x080A1DC0)
+    LocationData(LocationName.Mr_Weather_Comp_3_BMD_1,        0xB61015, 0x02001F32, 0x80, LocationType.BlueMysteryData, 0x080A1EB8)
+    LocationData(LocationName.Mr_Weather_Comp_3_BMD_2,        0xB61016, 0x02001F32, 0x40, LocationType.BlueMysteryData, 0x080A1EC4)
+    LocationData(LocationName.Pavilion_Comp_1_BMD_1,          0xB61017, 0x02001F38, 0x80, LocationType.BlueMysteryData, 0x080A2000)
+    LocationData(LocationName.Pavilion_Comp_1_BMD_2,          0xB61018, 0x02001F38, 0x40, LocationType.BlueMysteryData, 0x080A200C)
+    LocationData(LocationName.Pavilion_Comp_2_BMD_1,          0xB61019, 0x02001F38, 0x08, LocationType.BlueMysteryData, 0x080A2104)
+    LocationData(LocationName.Pavilion_Comp_2_BMD_2,          0xB6101A, 0x02001F38, 0x04, LocationType.BlueMysteryData, 0x080A2110)
+    LocationData(LocationName.Pavilion_Comp_3_BMD_1,          0xB6101B, 0x02001F39, 0x80, LocationType.BlueMysteryData, 0x080A2208)
+    LocationData(LocationName.Pavilion_Comp_3_BMD_2,          0xB6101C, 0x02001F39, 0x40, LocationType.BlueMysteryData, 0x080A2214)
+    LocationData(LocationName.Pavilion_Comp_4_BMD_1,          0xB6101D, 0x02001F39, 0x08, LocationType.BlueMysteryData, 0x080A230C)
+    LocationData(LocationName.Pavilion_Comp_4_BMD_2,          0xB6101E, 0x02001F39, 0x04, LocationType.BlueMysteryData, 0x080A2318)
+    LocationData(LocationName.ACDC_HP_BMD,                    0xB6101F, 0x02001F40, 0x08, LocationType.BlueMysteryData, 0x080A2458)
+    LocationData(LocationName.Aquarium_HP_BMD,                0xB61020, 0x02001F41, 0x08, LocationType.BlueMysteryData, 0x080A24A4)
+    LocationData(LocationName.Green_HP_BMD,                   0xB61021, 0x02001F42, 0x08, LocationType.BlueMysteryData, 0x080A24F0)
+    LocationData(LocationName.Sky_HP_BMD,                     0xB61022, 0x02001F43, 0x80, LocationType.BlueMysteryData, 0x080A253C)
+    LocationData(LocationName.RoboDog_Comp_BMD,               0xB61023, 0x02001F48, 0x80, LocationType.BlueMysteryData, 0x080A25CC)
+    LocationData(LocationName.Labs_Comp_1_BMD_1,              0xB61024, 0x02001F48, 0x20, LocationType.BlueMysteryData, 0x080A25F4)
+    LocationData(LocationName.Labs_Comp_1_BMD_2,              0xB61025, 0x02001F48, 0x10, LocationType.BlueMysteryData, 0x080A2600)
+    LocationData(LocationName.Class_6_1_Comp_BMD_1,           0xB61026, 0x02001F48, 0x08, LocationType.BlueMysteryData, 0x080A2640)
+    LocationData(LocationName.Class_6_1_Comp_BMD_2,           0xB61027, 0x02001F48, 0x04, LocationType.BlueMysteryData, 0x080A264C)
+    LocationData(LocationName.Class_6_2_Comp_BMD,             0xB61028, 0x02001F48, 0x02, LocationType.BlueMysteryData, 0x080A268C)
+    LocationData(LocationName.Class_1_1_Comp_BMD_1,           0xB61029, 0x02001F49, 0x80, LocationType.BlueMysteryData, 0x080A26D8)
+    LocationData(LocationName.Class_1_1_Comp_BMD_2,           0xB6102A, 0x02001F49, 0x40, LocationType.BlueMysteryData, 0x080A26E4)
+    LocationData(LocationName.Class_1_2_Comp_BMD_1,           0xB6102B, 0x02001F49, 0x20, LocationType.BlueMysteryData, 0x080A2724)
+    LocationData(LocationName.Class_1_2_Comp_BMD_2,           0xB6102C, 0x02001F49, 0x10, LocationType.BlueMysteryData, 0x080A2730)
+    LocationData(LocationName.Bathroom_Comp_BMD,              0xB6102D, 0x02001F49, 0x08, LocationType.BlueMysteryData, 0x080A2770)
+    LocationData(LocationName.Elevator_Comp_BMD,              0xB6102E, 0x02001F49, 0x02, LocationType.BlueMysteryData, 0x080A2798)
+    LocationData(LocationName.Fish_Stick_Shop_Comp_BMD_1,     0xB6102F, 0x02001F4A, 0x80, LocationType.BlueMysteryData, 0x080A27C0)
+    LocationData(LocationName.Fish_Stick_Shop_Comp_BMD_2,     0xB61030, 0x02001F4A, 0x40, LocationType.BlueMysteryData, 0x080A27CC)
+    LocationData(LocationName.Security_Camera_Comp_BMD_1,     0xB61031, 0x02001F4A, 0x20, LocationType.BlueMysteryData, 0x080A280C)
+    LocationData(LocationName.Security_Camera_Comp_BMD_2,     0xB61032, 0x02001F4A, 0x10, LocationType.BlueMysteryData, 0x080A2818)
+    LocationData(LocationName.Book_Comp_BMD_1,                0xB61033, 0x02001F4A, 0x08, LocationType.BlueMysteryData, 0x080A2858)
+    LocationData(LocationName.Book_Comp_BMD_2,                0xB61034, 0x02001F4A, 0x04, LocationType.BlueMysteryData, 0x080A2864)
+    LocationData(LocationName.Fan_Comp_BMD_1,                 0xB61035, 0x02001F4A, 0x02, LocationType.BlueMysteryData, 0x080A28A4)
+    LocationData(LocationName.Fan_Comp_BMD_2,                 0xB61036, 0x02001F4A, 0x01, LocationType.BlueMysteryData, 0x080A28B0)
+    LocationData(LocationName.Air_Conditioner_Comp_BMD_1,     0xB61037, 0x02001F4B, 0x80, LocationType.BlueMysteryData, 0x080A28F0)
+    LocationData(LocationName.Air_Conditioner_Comp_BMD_2,     0xB61038, 0x02001F4B, 0x40, LocationType.BlueMysteryData, 0x080A28FC)
+    LocationData(LocationName.Heater_Comp_BMD_1,              0xB61039, 0x02001F4B, 0x20, LocationType.BlueMysteryData, 0x080A293C)
+    LocationData(LocationName.Heater_Comp_BMD_2,              0xB6103A, 0x02001F4B, 0x10, LocationType.BlueMysteryData, 0x080A2948)
+    LocationData(LocationName.Shower_Comp_BMD_1,              0xB6103B, 0x02001F4B, 0x08, LocationType.BlueMysteryData, 0x080A2988)
+    LocationData(LocationName.Shower_Comp_BMD_2,              0xB6103C, 0x02001F4B, 0x04, LocationType.BlueMysteryData, 0x080A2994)
+    LocationData(LocationName.Heliport_Comp_BMD_1,            0xB6103D, 0x02001F4B, 0x02, LocationType.BlueMysteryData, 0x080A29D4)
+    LocationData(LocationName.Heliport_Comp_BMD_2,            0xB6103E, 0x02001F4B, 0x01, LocationType.BlueMysteryData, 0x080A29E0)
+    LocationData(LocationName.Labs_Comp_2_BMD,                0xB6103F, 0x02001F4C, 0x80, LocationType.BlueMysteryData, 0x080A2A64)
+    LocationData(LocationName.Vending_Machine_Comp_BMD_1,     0xB61040, 0x02001F4C, 0x20, LocationType.BlueMysteryData, 0x080A2AB0)
+    LocationData(LocationName.Vending_Machine_Comp_BMD_2,     0xB61041, 0x02001F4C, 0x10, LocationType.BlueMysteryData, 0x080A2ABC)
+    LocationData(LocationName.Punish_Chair_Comp_BMD,          0xB61042, 0x02001F4C, 0x08, LocationType.BlueMysteryData, 0x080A2AFC)
+    LocationData(LocationName.Water_Machine_Comp_BMD,         0xB61043, 0x02001F4C, 0x02, LocationType.BlueMysteryData, 0x080A2B48)
+    LocationData(LocationName.Symbol_Comp_BMD_1,              0xB61044, 0x02001F4D, 0x80, LocationType.BlueMysteryData, 0x080A2B70)
+    LocationData(LocationName.Symbol_Comp_BMD_2,              0xB61045, 0x02001F4D, 0x40, LocationType.BlueMysteryData, 0x080A2B7C)
+    LocationData(LocationName.Monitor_Comp_BMD,               0xB61046, 0x02001F4D, 0x20, LocationType.BlueMysteryData, 0x080A2BBC)
+    LocationData(LocationName.Popcorn_Shop_Comp_BMD,          0xB61047, 0x02001F4D, 0x08, LocationType.BlueMysteryData, 0x080A2BE4)
+    LocationData(LocationName.Teachers_Room_Comp_BMD_1,       0xB61048, 0x02001F4D, 0x02, LocationType.BlueMysteryData, 0x080A2C0C)
+    LocationData(LocationName.Teachers_Room_Comp_BMD_2,       0xB61049, 0x02001F4D, 0x01, LocationType.BlueMysteryData, 0x080A2C18)
+    LocationData(LocationName.Pipe_Comp_BMD,                  0xB6104A, 0x02001F4E, 0x80, LocationType.BlueMysteryData, 0x080A2C58)
+    LocationData(LocationName.Observation_Comp_BMD_1,         0xB6104B, 0x02001F4E, 0x20, LocationType.BlueMysteryData, 0x080A2C80)
+    LocationData(LocationName.Observation_Comp_BMD_2,         0xB6104C, 0x02001F4E, 0x10, LocationType.BlueMysteryData, 0x080A2C8C)
+    LocationData(LocationName.Oxygen_Tank_Comp_BMD,           0xB6104D, 0x02001F4E, 0x08, LocationType.BlueMysteryData, 0x080A2CCC)
+    LocationData(LocationName.Principals_Office_Comp_BMD_1,   0xB6104E, 0x02001F4E, 0x02, LocationType.BlueMysteryData, 0x080A2D18)
+    LocationData(LocationName.Principals_Office_Comp_BMD_2,   0xB6104F, 0x02001F4E, 0x01, LocationType.BlueMysteryData, 0x080A2D24)
+    LocationData(LocationName.Mascot_Comp_BMD_1,              0xB61050, 0x02001F4F, 0x80, LocationType.BlueMysteryData, 0x080A2D64)
+    LocationData(LocationName.Mascot_Comp_BMD_2,              0xB61051, 0x02001F4F, 0x40, LocationType.BlueMysteryData, 0x080A2D70)
+    LocationData(LocationName.Stuffed_Toy_Shop_Comp_BMD_1,    0xB61052, 0x02001F4F, 0x20, LocationType.BlueMysteryData, 0x080A2DB0)
+    LocationData(LocationName.Stuffed_Toy_Shop_Comp_BMD_2,    0xB61053, 0x02001F4F, 0x10, LocationType.BlueMysteryData, 0x080A2DBC)
+    LocationData(LocationName.Dog_House_Comp_BMD_1,           0xB61054, 0x02001F4F, 0x08, LocationType.BlueMysteryData, 0x080A2DFC)
+    LocationData(LocationName.Dog_House_Comp_BMD_2,           0xB61055, 0x02001F4F, 0x04, LocationType.BlueMysteryData, 0x080A2E08)
+    LocationData(LocationName.Guide_Panel_Comp_BMD,           0xB61056, 0x02001F4F, 0x02, LocationType.BlueMysteryData, 0x080A2E48)
+    LocationData(LocationName.Central_Area_1_BMD_1,           0xB61057, 0x02001F08, 0x80, LocationType.BlueMysteryData, 0x080A2EB4)
+    LocationData(LocationName.Central_Area_1_BMD_2,           0xB61058, 0x02001F08, 0x40, LocationType.BlueMysteryData, 0x080A2EC0)
+    LocationData(LocationName.Central_Area_2_BMD_1,           0xB61059, 0x02001F09, 0x80, LocationType.BlueMysteryData, 0x080A2FC8)
+    LocationData(LocationName.Central_Area_2_BMD_2,           0xB6105A, 0x02001F09, 0x40, LocationType.BlueMysteryData, 0x080A2FD4)
+    LocationData(LocationName.Central_Area_3_BMD,             0xB6105B, 0x02001F0A, 0x80, LocationType.BlueMysteryData, 0x080A30DC)
+    LocationData(LocationName.Seaside_Area_1_BMD_1,           0xB6105C, 0x02001F0C, 0x80, LocationType.BlueMysteryData, 0x080A3234)
+    LocationData(LocationName.Seaside_Area_1_BMD_2,           0xB6105D, 0x02001F0C, 0x40, LocationType.BlueMysteryData, 0x080A3240)
+    LocationData(LocationName.Seaside_Area_1_BMD_3,           0xB6105E, 0x02001F0C, 0x08, LocationType.BlueMysteryData, 0x080A3264)
+    LocationData(LocationName.Seaside_Area_2_BMD_1,           0xB6105F, 0x02001F0D, 0x80, LocationType.BlueMysteryData, 0x080A336C)
+    LocationData(LocationName.Seaside_Area_2_BMD_2,           0xB61060, 0x02001F0D, 0x40, LocationType.BlueMysteryData, 0x080A3378)
+    LocationData(LocationName.Seaside_Area_2_BMD_3,           0xB61061, 0x02001F0D, 0x08, LocationType.BlueMysteryData, 0x080A339C)
+    LocationData(LocationName.Seaside_Area_3_BMD,             0xB61062, 0x02001F0E, 0x80, LocationType.BlueMysteryData, 0x080A34A4)
+    LocationData(LocationName.Green_Area_1_BMD_1,             0xB61063, 0x02001F10, 0x80, LocationType.BlueMysteryData, 0x080A35FC)
+    LocationData(LocationName.Green_Area_1_BMD_2,             0xB61064, 0x02001F10, 0x08, LocationType.BlueMysteryData, 0x080A362C)
+    LocationData(LocationName.Green_Area_2_BMD_1,             0xB61065, 0x02001F11, 0x80, LocationType.BlueMysteryData, 0x080A3734)
+    LocationData(LocationName.Green_Area_2_BMD_2,             0xB61066, 0x02001F11, 0x40, LocationType.BlueMysteryData, 0x080A3740)
+    LocationData(LocationName.Green_Area_2_BMD_3,             0xB61067, 0x02001F11, 0x08, LocationType.BlueMysteryData, 0x080A3764)
+    LocationData(LocationName.Underground_2_BMD_1,            0xB61068, 0x02001F15, 0x80, LocationType.BlueMysteryData, 0x080A39C4)
+    LocationData(LocationName.Underground_2_BMD_2,            0xB61069, 0x02001F15, 0x08, LocationType.BlueMysteryData, 0x080A39E8)
+    LocationData(LocationName.Sky_Area_1_BMD_1,               0xB6106A, 0x02001F18, 0x80, LocationType.BlueMysteryData, 0x080A3B1C)
+    LocationData(LocationName.Sky_Area_1_BMD_2,               0xB6106B, 0x02001F18, 0x08, LocationType.BlueMysteryData, 0x080A3B4C)
+    LocationData(LocationName.Sky_Area_2_BMD_1,               0xB6106C, 0x02001F19, 0x80, LocationType.BlueMysteryData, 0x080A3C54)
+    LocationData(LocationName.Sky_Area_2_BMD_2,               0xB6106D, 0x02001F19, 0x40, LocationType.BlueMysteryData, 0x080A3C60)
+    LocationData(LocationName.Sky_Area_2_BMD_3,               0xB6106E, 0x02001F19, 0x08, LocationType.BlueMysteryData, 0x080A3C84)
+    LocationData(LocationName.ACDC_Area_BMD_1,                0xB6106F, 0x02001F1A, 0x80, LocationType.BlueMysteryData, 0x080A3D8C)
+    LocationData(LocationName.ACDC_Area_BMD_2,                0xB61070, 0x02001F1A, 0x08, LocationType.BlueMysteryData, 0x080A3DBC)
+    LocationData(LocationName.Undernet_1_BMD,                 0xB61071, 0x02001F1C, 0x80, LocationType.BlueMysteryData, 0x080A3F08)
+    LocationData(LocationName.Undernet_Zero_BMD_1,            0xB61072, 0x02001F1D, 0x80, LocationType.BlueMysteryData, 0x080A401C)
+    LocationData(LocationName.Undernet_Zero_BMD_2,            0xB61073, 0x02001F1D, 0x40, LocationType.BlueMysteryData, 0x080A4028)
+    LocationData(LocationName.Undernet_Zero_BMD_3,            0xB61074, 0x02001F1D, 0x20, LocationType.BlueMysteryData, 0x080A4034)
+    LocationData(LocationName.Undernet_2_BMD,                 0xB61075, 0x02001F1E, 0x80, LocationType.BlueMysteryData, 0x080A4154)
+    LocationData(LocationName.Graveyard_BMD_1,                0xB61076, 0x02001F21, 0x80, LocationType.BlueMysteryData, 0x080A4540)
+    LocationData(LocationName.Graveyard_BMD_2,                0xB61077, 0x02001F21, 0x40, LocationType.BlueMysteryData, 0x080A454C)
+    LocationData(LocationName.Graveyard_BMD_3,                0xB61078, 0x02001F21, 0x10, LocationType.BlueMysteryData, 0x080A4564)
+    LocationData(LocationName.Graveyard_BMD_4,                0xB61079, 0x02001F21, 0x08, LocationType.BlueMysteryData, 0x080A4570)
+    LocationData(LocationName.Graveyard_BMD_5,                0xB6107A, 0x02001F23, 0x01, LocationType.BlueMysteryData, 0x080A45A0)
 ]
 
 pmds = [
-    LocationData(LocationName.ACDC_1_PMD,                   0xb31084, 0x020001d0, 0x20, 0x7643B8, 232, [1]),
-    LocationData(LocationName.Yoka_1_PMD,                   0xb31085, 0x20001e0, 0x40, 0x76D1B0, 231, [1]),
-    LocationData(LocationName.Beach_1_PMD,                  0xb31086, 0x20001e8, 0x40, 0x76FF68, 231, [1, 2]),
-    LocationData(LocationName.Undernet_7_PMD,               0xb31087, 0x20001f6, 0x10, 0x775934, 233, [1]),
-    LocationData(LocationName.Mayls_HP_PMD,                 0xb31088, 0x2000239, 0x40, 0x75DCC4, 231, [1]),
-    LocationData(LocationName.SciLab_Dads_Computer_PMD,     0xb31089, 0x2000241, 0x4, 0x761498, 231, [1]),
-    LocationData(LocationName.Zoo_Panda_PMD,                0xb3108a, 0x2000249, 0x40, 0x763C88, 231, [1]),
-    LocationData(LocationName.Beach_DNN_Security_Panel_PMD, 0xb3108b, 0x2000244, 0x80, 0x76274C, 230, [1]),
-    LocationData(LocationName.Beach_DNN_Main_Console_PMD,   0xb3108c, 0x200024b, 0x1, 0x7606E4, 231, [1]),
-    LocationData(LocationName.Tamakos_HP_PMD,               0xb3108d, 0x200023c, 0x40, 0x75E2D4, 231, [1])
+    LocationData(LocationName.ACDC_HP_PMD,                    0xB6107B, 0x02001F40, 0x04, LocationType.PurpleMysteryData, 0x080A2464)
+    LocationData(LocationName.Aquarium_HP_PMD,                0xB6107C, 0x02001F41, 0x04, LocationType.PurpleMysteryData, 0x080A24B0)
+    LocationData(LocationName.Green_HP_PMD,                   0xB6107D, 0x02001F42, 0x04, LocationType.PurpleMysteryData, 0x080A24FC)
+    LocationData(LocationName.Sky_HP_PMD,                     0xB6107E, 0x02001F43, 0x40, LocationType.PurpleMysteryData, 0x080A2548)
+    LocationData(LocationName.Class_6_2_Comp_PMD,             0xB6107F, 0x02001F48, 0x01, LocationType.PurpleMysteryData, 0x080A2698)
+    LocationData(LocationName.Labs_Comp_2_PMD,                0xB61080, 0x02001F4C, 0x40, LocationType.PurpleMysteryData, 0x080A2A70)
+    LocationData(LocationName.Punish_Chair_Comp_PMD,          0xB61081, 0x02001F4C, 0x04, LocationType.PurpleMysteryData, 0x080A2B08)
+    LocationData(LocationName.Oxygen_Tank_Comp_PMD,           0xB61082, 0x02001F4E, 0x04, LocationType.PurpleMysteryData, 0x080A2CD8)
+    LocationData(LocationName.Central_Area_3_PMD,             0xB61083, 0x02001F0A, 0x40, LocationType.PurpleMysteryData, 0x080A30E8)
+    LocationData(LocationName.Seaside_Area_3_PMD,             0xB61084, 0x02001F0E, 0x40, LocationType.PurpleMysteryData, 0x080A34B0)
+    LocationData(LocationName.Green_Area_1_PMD,               0xB61085, 0x02001F10, 0x40, LocationType.PurpleMysteryData, 0x080A3608)
+    LocationData(LocationName.Underground_1_PMD_1,            0xB61086, 0x02001F14, 0x80, LocationType.PurpleMysteryData, 0x080A38B0)
+    LocationData(LocationName.Underground_1_PMD_2,            0xB61087, 0x02001F14, 0x40, LocationType.PurpleMysteryData, 0x080A38BC)
+    LocationData(LocationName.Sky_Area_1_PMD,                 0xB61088, 0x02001F18, 0x40, LocationType.PurpleMysteryData, 0x080A3B28)
+    LocationData(LocationName.ACDC_Area_PMD,                  0xB61089, 0x02001F1A, 0x40, LocationType.PurpleMysteryData, 0x080A3D98)
+    LocationData(LocationName.Undernet_1_PMD,                 0xB6108A, 0x02001F1C, 0x40, LocationType.PurpleMysteryData, 0x080A3F14)
+    LocationData(LocationName.Undernet_2_PMD,                 0xB6108B, 0x02001F1E, 0x40, LocationType.PurpleMysteryData, 0x080A4160)
+    LocationData(LocationName.Graveyard_PMD_1,                0xB6108C, 0x02001F21, 0x20, LocationType.PurpleMysteryData, 0x080A4558)
+    LocationData(LocationName.Graveyard_PMD_2,                0xB6108D, 0x02001F21, 0x04, LocationType.PurpleMysteryData, 0x080A457C)
 ]
 
 overworlds = [
-    LocationData(LocationName.Yoka_Mr_Quiz,                       0xb310ec, 0x200005f, 0x8, 0x7473F8, 197, [0, 1]),
-    LocationData(LocationName.Yoka_Quiz_Master,                   0xb3108e, 0x200005f, 0x4, 0x748894, 202, [0]),
-    LocationData(LocationName.Hospital_Quiz_Queen,                0xb3108f, 0x200005f, 0x2, 0x757724, 202, [0]),
-    LocationData(LocationName.Hades_Quiz_King,                    0xb31090, 0x2000164, 0x8, 0x7519B0, 207, [0]),
-    LocationData(LocationName.ACDC_SonicWav_W_Trade,              0xb31091, 0x2000162, 0x10, 0x73A7F8, 192, [0], True, 0x2000160, 0x80),
-    LocationData(LocationName.ACDC_Bubbler_C_Trade,               0xb31092, 0x2000162, 0x8, 0x737634, 192, [0], True, 0x2000160, 0x40),
-    LocationData(LocationName.ACDC_Recov120_S_Trade,              0xb31093, 0x2000163, 0x40, 0x72FA7C, 192, [0], True, 0x2000160, 0x02),
-    LocationData(LocationName.SciLab_Shake1_S_Trade,              0xb31094, 0x2000163, 0x10, 0x73B9C8, 192, [0], True, 0x2000161, 0x80),
-    LocationData(LocationName.Yoka_FireSwrd_P_Trade,              0xb31095, 0x2000162, 0x4, 0x745488, 192, [0], True, 0x2000160, 0x20),
-    LocationData(LocationName.Hospital_DynaWav_V_Trade,           0xb31096, 0x2000163, 0x4, 0x754D00, 202, [0], True, 0x2000161, 0x20),
-    LocationData(LocationName.Beach_DNN_WideSwrd_C_Trade,         0xb31097, 0x2000162, 0x1, 0x750C9C, 192, [0], True, 0x2000160, 0x08),
-    LocationData(LocationName.Beach_DNN_HoleMetr_H_Trade,         0xb31098, 0x2000164, 0x10, 0x751110, 192, [0], True, 0x2000162, 0x80),
-    LocationData(LocationName.Beach_DNN_Shadow_J_Trade,           0xb31099, 0x2000163, 0x2, 0x750248, 192, [0], True, 0x2000161, 0x10),
-    LocationData(LocationName.Hades_GrabBack_K_Trade,             0xb3109a, 0x2000164, 0x80, 0x753A48, 192, [0], True, 0x2000161, 0x04),
-    LocationData(LocationName.Comedian,                           0xb3109b, 0x200024d, 0x20, 0x76DC80, 3, [22]),
-    LocationData(LocationName.Villain,                            0xb3109c, 0x200024d, 0x10, 0x77124C, 24, [24]),
-    LocationData(LocationName.ACDC_School_Desk,                   0xb3109d, 0x200024c, 0x1, 0x739580, 236, [4, 5]),
-    LocationData(LocationName.ACDC_Class_5B_Bookshelf,            0xb3109e, 0x200024c, 0x40, 0x737634, 235, [5, 6]),
-    LocationData(LocationName.SciLab_Garbage_Can,                 0xb3109f, 0x200024c, 0x8, 0x73AC20, 222, [4, 5]),
-    LocationData(LocationName.Yoka_Inn_Jars,                      0xb310a0, 0x200024c, 0x80, 0x747B1C, 237, [4, 5]),
-    LocationData(LocationName.Yoka_Zoo_Garbage,                   0xb310a1, 0x200024d, 0x8, 0x749444, 226, [5]),
-    LocationData(LocationName.Beach_Department_Store,             0xb310a2, 0x2000161, 0x40, 0x74C27C, 196, [0, 1]),
-    LocationData(LocationName.Beach_Hospital_Plaque,              0xb310a3, 0x200024c, 0x4, 0x754394, 220, [3, 4]),
-    LocationData(LocationName.Beach_Hospital_Pink_Door,           0xb310a4, 0x200024d, 0x4, 0x754D00, 220, [4]),
-    LocationData(LocationName.Beach_Hospital_Tree,                0xb310a5, 0x200024c, 0x2, 0x757724, 222, [4]),
-    LocationData(LocationName.Beach_Hospital_Hidden_Conversation, 0xb310a6, 0x2000162, 0x20, 0x7586F8, 191, [0]),
-    LocationData(LocationName.Beach_Hospital_Girl,                0xb310a7, 0x2000160, 0x1, 0x754394, 191, [0, 1]),
-    LocationData(LocationName.Beach_DNN_Kiosk,                    0xb310a8, 0x200024e, 0x80, 0x74E184, 76, [0]),
-    LocationData(LocationName.Beach_DNN_Boxes,                    0xb310a9, 0x200024c, 0x20, 0x74FAAC, 222, [4, 5]),
-    LocationData(LocationName.Beach_DNN_Poster,                   0xb310aa, 0x200024d, 0x80, 0x751110, 227, [3, 4]),
-    LocationData(LocationName.Hades_Boat_Dock,                    0xb310ab, 0x200024c, 0x10, 0x7519B0, 223, [3]),
-    LocationData(LocationName.WWW_Control_Room_1_Screen,          0xb310ac, 0x200024d, 0x40, 0x7596C4, 222, [3, 4]),
-    LocationData(LocationName.WWW_Wilys_Desk,                     0xb310ad, 0x200024d, 0x2, 0x759384, 229, [3]),
-    LocationData(LocationName.Undernet_4_Pillar_Prog,             0xb310ae, 0x2000161, 0x1, 0x7746C8, 191, [0, 1]),
-    LocationData(LocationName.Serenade,                           0xb3110f, 0x2000178, 0x40, 0x7B3C74, 1, [0])
+    LocationData(LocationName.School_Mr_Quiz,                     0xB6108E, 0x02001EAB, 0x02, LocationType.OverWorld, 0x76C83C,   7, [22]),
+    LocationData(LocationName.Aquarium_Quiz_Master,               0xB6108F, 0x02001EAC, 0x80, LocationType.OverWorld, 0x777218,   2, [39]),
+    LocationData(LocationName.Green_Quiz_King,                    0xB61090, 0x02001EAC, 0x20, LocationType.OverWorld, 0x77C55C,  12, [53]),
+    LocationData(LocationName.Central_Barr100_H_Trade,            0xB61091, 0x02001EAB, 0x80, LocationType.OverWorld, 0x764B38, 107, [3], True, 0x02001EAA, 0x04),
+    LocationData(LocationName.Aquarium_PnlRetrn_*_Trade,          0xB61092, 0x02001EAA, 0x02, LocationType.OverWorld, 0x7991F0,   2, [2], True, 0x02001EAA, 0x01),
+    LocationData(LocationName.Green_HolyPnl_S_Trade,              0xB61093, 0x02001EAB, 0x08, LocationType.OverWorld, 0x77A888,  52, [2], True, 0x02001EAB, 0x10),
+    LocationData(LocationName.AirCon_AuraHed1_B_Trade,            0xB61094, 0x02001EAB, 0x20, LocationType.OverWorld, 0x79E718,   2, [2], True, 0x02001EAB, 0x40),
+    LocationData(LocationName.Class_1_2_EnergBom_K_Trade,         0xB61095, 0x02001EAD, 0x80, LocationType.OverWorld, 0x76B554,  10, [1], True, 0x02001EAC, 0x01),
+    LocationData(LocationName.Aquarium_DublShot_C_Trade,          0xB61096, 0x02001EAD, 0x20, LocationType.OverWorld, 0x773D3C,  10, [1], True, 0x02001EAD, 0x40),
+    LocationData(LocationName.WatrMchn_HiBoomer_V_Trade,          0xB61097, 0x02001EAD, 0x08, LocationType.OverWorld, 0x79F4DC,   2, [1], True, 0x02001EAD, 0x10),
+    LocationData(LocationName.Sky_GrabRvng_I_Trade,               0xB61098, 0x02001EAD, 0x02, LocationType.OverWorld, 0x77F4A0,   7, [1], True, 0x02001EAD, 0x04),
+    LocationData(LocationName.ACDC_BigBomb_O_Trade,               0xB61099, 0x02001EAE, 0x80, LocationType.OverWorld, 0x798A08,   2, [1], True, 0x02001EAD, 0x01),
+    LocationData(LocationName.Class_6_1_Grid,                     0xB6109A, 0x02001CB8, 0x01, LocationType.OverWorld, 0x755468,   0, [4, 5]),
+    LocationData(LocationName.Seaside_Auditorium_Trash_Can,       0xB6109B, 0x02001CB9, 0x80, LocationType.OverWorld, 0x758FA0,   3, [2, 3]),
+    LocationData(LocationName.Seaside_Control_Room_Ladder,        0xB6109C, 0x02001CB8, 0x04, LocationType.OverWorld, 0x759248,   2, [2]),
+    LocationData(LocationName.Green_Foyer_Flowers,                0xB6109D, 0x02001CB9, 0x40, LocationType.OverWorld, 0x756870,   6, [3, 4]),
+    LocationData(LocationName.Sky_Air_Tank,                       0xB6109E, 0x02001CB8, 0x02, LocationType.OverWorld, 0x75A3F4,   4, [6]),
+    LocationData(LocationName.ACDC_Dexs_Door,                     0xB6109F, 0x02001CB9, 0x08, LocationType.OverWorld, 0x753814,   5, [3]),
+    LocationData(LocationName.Principals_Coffee_Table,            0xB610A0, 0x02001CB9, 0x20, LocationType.OverWorld, 0x7573BC,   6, [3, 4]),
+    LocationData(LocationName.Seaside_Pavilion_Waterfall,         0xB610A1, 0x02001CB9, 0x10, LocationType.OverWorld, 0x75AF00,   2, [3]),
+    LocationData(LocationName.Central_1_Net_Cafe,                 0xB610A2, 0x02001CAA, 0x08, LocationType.OverWorld, 0x782844, 130, [4]),
+    LocationData(LocationName.Green_2_Net_Cafe,                   0xB610A3, 0x02001CAB, 0x40, LocationType.OverWorld, 0x78E678,  67, [3]),
+    LocationData(LocationName.Sky_1_Net_Cafe,                     0xB610A4, 0x02001CAB, 0x04, LocationType.OverWorld, 0x7903B4,  87, [3]),
+    LocationData(LocationName.Central_2_Heel_Navi,                0xB610A5, 0x02001EAE, 0x10, LocationType.OverWorld, 0x784DDC,  53, [3, 4]),
+    LocationData(LocationName.Class_1_2_Heel_Navi,                0xB610A6, 0x02001CBA, 0x01, LocationType.OverWorld, 0x790DF4,  11, [2]),
+    LocationData(LocationName.Seaside_Auditorium_Man,             0xB610A7, 0x02001EAE, 0x02, LocationType.OverWorld, 0x776A7C,  13, [4]),
+    LocationData(LocationName.Aquarium_Comp_1_Navi,               0xB610A8, 0x02001EAF, 0x40, LocationType.OverWorld, 0x795DD0,  13, [5]),
+    LocationData(LocationName.Green_1_Heel_Navi,                  0xB610A9, 0x02001EAC, 0x08, LocationType.OverWorld, 0x78D2A0,  21, [2]),
+    #LocationData(LocationName.Undernet_0_Heel_Navi,              0xB610AA, 0x02003178, 0x01, LocationType.OverWorld, 0x794404,  11, [1]),
+    LocationData(LocationName.Green_Punishment_Room_Prog,         0xB610AB, 0x02001EAC, 0x02, LocationType.OverWorld, 0x77C318,   5, [2]),
+    LocationData(LocationName.Sky_1_Brown_Navi,                   0xB610AC, 0x02001CB9, 0x04, LocationType.OverWorld, 0x7903B4,   6, [2]),
+    LocationData(LocationName.Bass,                               0xB610AD, 0x02001E89, 0x01, LocationType.OverWorld, 0x7D6DC0,   2, [2]),
+    LocationData(LocationName.Talk_To_Mayl,                       0xB610AE, 0x02001CC5, 0x20, LocationType.OverWorld, 0x766E28,  11, [3]),
+    LocationData(LocationName.ElecMan_Scenario,                   0xB6111E, 0x02001DDF, 0x10, LocationType.OverWorld, 0x7BFE50,   5, [0]),
+    LocationData(LocationName.SlashMan_Scenario,                  0xB6111F, 0x02001D94, 0x80, LocationType.OverWorld, 0x7BA78C,   1, [0]),
+    LocationData(LocationName.EraseMan_Scenario,                  0xB61120, 0x02001E23, 0x04, LocationType.OverWorld, 0x7C9D54,   1, [0]),
+    LocationData(LocationName.ChargeMan_Scenario,                 0xB61121, 0x02001E24, 0x40, LocationType.OverWorld, 0x7CB584,  1, [0])
 ]
 
-jobs = [
-    LocationData(LocationName.Please_deliver_this,        0xb310af, 0x2000300, 0x8, 0x7643B8, 195, [0]),
-    LocationData(LocationName.My_Navi_is_sick,            0xb310b0, 0x2000300, 0x4, 0x73AC20, 192, [0, 1]),
-    LocationData(LocationName.Help_me_with_my_son,        0xb310b1, 0x2000300, 0x2, 0x73F8FC, 193, [0, 1]),
-    LocationData(LocationName.Transmission_error,         0xb310b2, 0x2000300, 0x1, 0x73CF54, 193, [0]),
-    LocationData(LocationName.Chip_Prices,                0xb310b3, 0x2000301, 0x80, 0x767928, 195, [0]),
-    LocationData(LocationName.Im_broke,                   0xb310b4, 0x2000301, 0x40, 0x746578, 194, [1]),
-    LocationData(LocationName.Rare_chips_for_cheap,       0xb310b5, 0x2000301, 0x20, 0x762A04, 192, [0]),
-    LocationData(LocationName.Be_my_boyfriend,            0xb310b6, 0x2000301, 0x10, 0x77124C, 203, [0]),
-    LocationData(LocationName.Will_you_deliver,           0xb310b7, 0x2000301, 0x8, 0x745488, 205, [0]),
-    # LocationData(LocationName.Look_for_friends,           0xb310b8, 0x2000300, 0x80, 0x72DAFC, 210, [0]),
-    # LocationData(LocationName.Stuntmen_wanted,            0xb310b9, 0x2000300, 0x40, 0x76FF68, 194, [0]),
-    # LocationData(LocationName.Riot_stopped,               0xb310ba, 0x2000300, 0x20, 0x74E184, 193, [0]),
-    # LocationData(LocationName.Gathering_Data,             0xb310bb, 0x2000300, 0x10, 0x739580, 193, [0]),
-    LocationData(LocationName.Somebody_please_help,       0xb310bc, 0x2000301, 0x4, 0x73A14C, 193, [0]),
-    LocationData(LocationName.Looking_for_condor,         0xb310bd, 0x2000301, 0x2, 0x749444, 203, [0]),
-    LocationData(LocationName.Help_with_rehab,            0xb310be, 0x2000301, 0x1, 0x762CF0, 192, [0]),
-    LocationData(LocationName.Help_with_rehab_bonus,      0xb3110e, 0x2000301, 0x1, 0x762CF0, 192, [3]),
-    LocationData(LocationName.Old_Master,                 0xb310bf, 0x2000302, 0x80, 0x760E80, 193, [0]),
-    LocationData(LocationName.Catching_gang_members,      0xb310c0, 0x2000302, 0x40, 0x76EAE4, 193, [0]),
-    LocationData(LocationName.Please_adopt_a_virus,       0xb310c1, 0x2000302, 0x20, 0x76A4F4, 193, [0]),
-    LocationData(LocationName.Legendary_Tomes,            0xb310c2, 0x2000302, 0x10, 0x772898, 193, [0]),
-    LocationData(LocationName.Legendary_Tomes_Treasure,   0xb310c3, 0x200024e, 0x40, 0x739580, 225, [15]),
-    LocationData(LocationName.Hide_and_seek_First_Child,  0xb310c4, 0x2000188, 0x4, 0x75A7F8, 191, [0]),
-    LocationData(LocationName.Hide_and_seek_Second_Child, 0xb310c5, 0x2000188, 0x2, 0x75ADA8, 191, [0]),
-    LocationData(LocationName.Hide_and_seek_Third_Child,  0xb310c6, 0x2000188, 0x1, 0x75B5EC, 191, [0]),
-    LocationData(LocationName.Hide_and_seek_Fourth_Child, 0xb310c7, 0x2000189, 0x80, 0x75BEB0, 191, [0]),
-    LocationData(LocationName.Hide_and_seek_Completion,   0xb310c8, 0x2000302, 0x8, 0x742D40, 193, [0]),
-    LocationData(LocationName.Finding_the_blue_Navi,      0xb310c9, 0x2000302, 0x4, 0x773700, 192, [0]),
-    LocationData(LocationName.Give_your_support,          0xb310ca, 0x2000302, 0x2, 0x752D80, 192, [0]),
-    LocationData(LocationName.Stamp_collecting,           0xb310cb, 0x2000302, 0x1, 0x756074, 193, [0]),
-    LocationData(LocationName.Help_with_a_will,           0xb310cc, 0x2000303, 0x80, 0x7382B0, 197, [0])
+requests = [
+    LocationData(LocationName.Virus_Deletion,           0xB610AF, 0x02002014, 0x80, LocationType.Request, 0x76A1E4,   2, [2]),
+    LocationData(LocationName.Find_Keepsake,            0xB610B0, 0x02002014, 0x40, LocationType.Request, 0x764B38, 102, [4, 5]),
+    LocationData(LocationName.Errand_Request,           0xB610B1, 0x02002014, 0x20, LocationType.Request, 0x76EDFC,  12, [4]),
+    LocationData(LocationName.For_Victory,              0xB610B2, 0x02002014, 0x10, LocationType.Request, 0x782844, 103, [4]),
+    LocationData(LocationName.JuvenileDiv,              0xB610B3, 0x02002017, 0x40, LocationType.Request, 0x79FE54,   2, [7]),
+    LocationData(LocationName.Somebody_Help,            0xB610B4, 0x02002014, 0x08, LocationType.Request, 0x7953EC,   9, [3]),
+    LocationData(LocationName.Get_The_Chip,             0xB610B5, 0x02002014, 0x04, LocationType.Request, 0x78BD44,  17, [2, 3]),
+    LocationData(LocationName.Stock_Up,                 0xB610B6, 0x02002014, 0x02, LocationType.Request, 0x773D3C,  16, [5]),
+    LocationData(LocationName.StandIn_Recruit,          0xB610B7, 0x02002014, 0x01, LocationType.Request, 0x7991F0,  12, [3]),
+    LocationData(LocationName.PenguinsRanAway,          0xB610B8, 0x02002017, 0x08, LocationType.Request, 0x773D3C,  26, [3]),
+    LocationData(LocationName.Daughter_Worry,           0xB610B9, 0x02002015, 0x80, LocationType.Request, 0x778738,  32, [7, 8]),
+    LocationData(LocationName.Stop_Him,                 0xB610BA, 0x02002015, 0x40, LocationType.Request, 0x77B9F0,  24, [4]),
+    LocationData(LocationName.Loan_Collection,          0xB610BB, 0x02002015, 0x20, LocationType.Request, 0x79A664,  12, [6]),
+    LocationData(LocationName.Lumber_Merchant,          0xB610BC, 0x02002015, 0x10, LocationType.Request, 0x78E678,  32, [4]),
+    LocationData(LocationName.TimeCpsl,                 0xB610BD, 0x02002015, 0x08, LocationType.Request, 0x778738,  37, [13]),
+    LocationData(LocationName.DietGood_Money,           0xB610BE, 0x02002017, 0x02, LocationType.Request, 0x76C080,  12, [4]),
+    LocationData(LocationName.Find_The_Virus,           0xB610BF, 0x02002017, 0x10, LocationType.Request, 0x764B38, 142, [4]),
+    LocationData(LocationName.Got_A_Problem,            0xB610C0, 0x02002015, 0x04, LocationType.Request, 0x776A7C,  22, [16]),
+    LocationData(LocationName.Songwriter,               0xB610C1, 0x02002015, 0x02, LocationType.Request, 0x7903B4,  31, [28, 29]),
+    LocationData(LocationName.Buy_Whch_Stock,           0xB610C2, 0x02002015, 0x01, LocationType.Request, 0x7903B4,  54, [6]),
+    LocationData(LocationName.Cant_Open_Safe,           0xB610C3, 0x02002016, 0x80, LocationType.Request, 0x7A039C,   7, [4]),
+    LocationData(LocationName.Get_The_Bad_Guy,          0xB610C4, 0x02002017, 0x20, LocationType.Request, 0x764B38, 126, [5]),
+    LocationData(LocationName.Update_Help,              0xB610C5, 0x02002017, 0x04, LocationType.Request, 0x773D3C,  36, [3]),
+    LocationData(LocationName.Do_Something,             0xB610C6, 0x02002016, 0x40, LocationType.Request, 0x77246C,  42, [3]),
+    LocationData(LocationName.Want_Meet_Dghtr,          0xB610C7, 0x02002016, 0x20, LocationType.Request, 0x79B094,   4, [9]),
+    LocationData(LocationName.Not_Engh_Member,          0xB610C8, 0x02002016, 0x10, LocationType.Request, 0x79C598,   2, [4, 5]),
+    LocationData(LocationName.Track_The_Crmnl_1,        0xB610C9, 0x02002016, 0x08, LocationType.Request, 0x777218,  12, [4]),
+    LocationData(LocationName.Track_The_Crmnl_2,        0xB610CA, 0x02002016, 0x08, LocationType.Request, 0x777218,  12, [4]),
+    LocationData(LocationName.Track_The_Crmnl_3,        0xB610CB, 0x02002016, 0x08, LocationType.Request, 0x777218,  12, [4, 5]),
+    LocationData(LocationName.Self_Research,            0xB610CC, 0x02002017, 0x01, LocationType.Request, 0x79CAE4,   2, [7]),
+    LocationData(LocationName.OfficialRequest_1,        0xB610CD, 0x02002018, 0x80, LocationType.Request, 0x7A0B40,   3, [3, 4]),
+    LocationData(LocationName.OfficialRequest_2,        0xB610CE, 0x02002018, 0x80, LocationType.Request, 0x7A0B40,   3, [3, 4]),
+    LocationData(LocationName.OfficialRequest_3,        0xB610CF, 0x02002018, 0x80, LocationType.Request, 0x7A0B40,   3, [3, 4]),
+    LocationData(LocationName.Wheres_My_Navi,           0xB610D0, 0x02002016, 0x04, LocationType.Request, 0x76AD9C,   2, [4]),
+    LocationData(LocationName.One_More_Time,            0xB610D1, 0x02002016, 0x02, LocationType.Request, 0x764B38, 122, [4]),
+    LocationData(LocationName.SupportChip_Pls,          0xB610D2, 0x02002016, 0x01, LocationType.Request, 0x77E80C,  12, [4]),
+    LocationData(LocationName.Negotiate,                0xB610D3, 0x02002017, 0x80, LocationType.Request, 0x77E80C,  24, [4]),
+    LocationData(LocationName.An_Experiment_1,          0xB610D4, 0x02002018, 0x40, LocationType.Request, 0x7755B8,  84, [4, 5]),
+    LocationData(LocationName.An_Experiment_2,          0xB610D5, 0x02002018, 0x40, LocationType.Request, 0x7755B8,  84, [4, 5]),
+    LocationData(LocationName.An_Experiment_3,          0xB610D6, 0x02002018, 0x40, LocationType.Request, 0x7755B8,  84, [4, 5]),
+    LocationData(LocationName.RoadToSoulBtlr,           0xB610D7, 0x02002018, 0x20, LocationType.Request, 0x79A664,  24, [7])
 ]
 
-number_traders = [
-    LocationData(LocationName.Numberman_Code_01, 0xb310cd, 0x2000430, 0x80, 0x735734, 30, [0]),
-    LocationData(LocationName.Numberman_Code_02, 0xb310ce, 0x2000430, 0x40, 0x735734, 31, [0]),
-    LocationData(LocationName.Numberman_Code_03, 0xb310cf, 0x2000430, 0x20, 0x735734, 32, [0]),
-    LocationData(LocationName.Numberman_Code_04, 0xb310d0, 0x2000430, 0x10, 0x735734, 33, [0]),
-    LocationData(LocationName.Numberman_Code_05, 0xb310d1, 0x2000430, 0x08, 0x735734, 34, [0]),
-    LocationData(LocationName.Numberman_Code_06, 0xb310d2, 0x2000430, 0x04, 0x735734, 35, [0]),
-    LocationData(LocationName.Numberman_Code_07, 0xb310d3, 0x2000430, 0x02, 0x735734, 36, [0]),
-    LocationData(LocationName.Numberman_Code_08, 0xb310d4, 0x2000430, 0x01, 0x735734, 37, [0]),
-    LocationData(LocationName.Numberman_Code_09, 0xb310d5, 0x2000431, 0x80, 0x735734, 38, [0]),
-    LocationData(LocationName.Numberman_Code_10, 0xb310d6, 0x2000431, 0x40, 0x735734, 39, [0]),
-    LocationData(LocationName.Numberman_Code_11, 0xb310d7, 0x2000431, 0x20, 0x735734, 40, [0]),
-    LocationData(LocationName.Numberman_Code_12, 0xb310d8, 0x2000431, 0x10, 0x735734, 41, [0]),
-    LocationData(LocationName.Numberman_Code_13, 0xb310d9, 0x2000431, 0x08, 0x735734, 42, [0]),
-    LocationData(LocationName.Numberman_Code_14, 0xb310da, 0x2000431, 0x04, 0x735734, 43, [0]),
-    LocationData(LocationName.Numberman_Code_15, 0xb310db, 0x2000431, 0x02, 0x735734, 44, [0]),
-    LocationData(LocationName.Numberman_Code_16, 0xb310dc, 0x2000431, 0x01, 0x735734, 45, [0]),
-    LocationData(LocationName.Numberman_Code_17, 0xb310dd, 0x2000432, 0x80, 0x735734, 46, [0]),
-    LocationData(LocationName.Numberman_Code_18, 0xb310de, 0x2000432, 0x40, 0x735734, 47, [0]),
-    LocationData(LocationName.Numberman_Code_19, 0xb310df, 0x2000432, 0x20, 0x735734, 48, [0]),
-    LocationData(LocationName.Numberman_Code_20, 0xb310e0, 0x2000432, 0x10, 0x735734, 49, [0]),
-    LocationData(LocationName.Numberman_Code_21, 0xb310e1, 0x2000432, 0x08, 0x735734, 50, [0]),
-    LocationData(LocationName.Numberman_Code_22, 0xb310e2, 0x2000432, 0x04, 0x735734, 51, [0]),
-    LocationData(LocationName.Numberman_Code_23, 0xb310e3, 0x2000432, 0x02, 0x735734, 52, [0]),
-    LocationData(LocationName.Numberman_Code_24, 0xb310e4, 0x2000432, 0x01, 0x735734, 53, [0]),
-    LocationData(LocationName.Numberman_Code_25, 0xb310e5, 0x2000433, 0x80, 0x735734, 54, [0]),
-    LocationData(LocationName.Numberman_Code_26, 0xb310e6, 0x2000433, 0x40, 0x735734, 55, [0]),
-    LocationData(LocationName.Numberman_Code_27, 0xb310e7, 0x2000433, 0x20, 0x735734, 56, [0]),
-    LocationData(LocationName.Numberman_Code_28, 0xb310e8, 0x2000433, 0x10, 0x735734, 57, [0]),
-    LocationData(LocationName.Numberman_Code_29, 0xb310e9, 0x2000433, 0x08, 0x735734, 58, [0]),
-    LocationData(LocationName.Numberman_Code_30, 0xb310ea, 0x2000433, 0x04, 0x735734, 59, [0]),
-    LocationData(LocationName.Numberman_Code_31, 0xb310eb, 0x2000433, 0x02, 0x735734, 60, [0])
+lotto_codes = [
+    LocationData(LocationName.Lotto_Code_01, 0xB610D8, 0x0200214C, 0x80, LocationType.LottoCode, 0x754BD8, 58, [0]),
+    LocationData(LocationName.Lotto_Code_02, 0xB610D9, 0x0200214C, 0x40, LocationType.LottoCode, 0x754BD8, 59, [0]),
+    LocationData(LocationName.Lotto_Code_03, 0xB610DA, 0x0200214C, 0x20, LocationType.LottoCode, 0x754BD8, 60, [0]),
+    LocationData(LocationName.Lotto_Code_04, 0xB610DB, 0x0200214C, 0x10, LocationType.LottoCode, 0x754BD8, 61, [0]),
+    LocationData(LocationName.Lotto_Code_05, 0xB610DC, 0x0200214C, 0x08, LocationType.LottoCode, 0x754BD8, 62, [0]),
+    LocationData(LocationName.Lotto_Code_06, 0xB610DD, 0x0200214C, 0x04, LocationType.LottoCode, 0x754BD8, 63, [0]),
+    LocationData(LocationName.Lotto_Code_07, 0xB610DE, 0x0200214C, 0x02, LocationType.LottoCode, 0x754BD8, 64, [0]),
+    LocationData(LocationName.Lotto_Code_08, 0xB610DF, 0x0200214C, 0x01, LocationType.LottoCode, 0x754BD8, 65, [0]),
+    LocationData(LocationName.Lotto_Code_09, 0xB610E0, 0x0200214D, 0x80, LocationType.LottoCode, 0x754BD8, 66, [0]),
+    LocationData(LocationName.Lotto_Code_10, 0xB610E1, 0x0200214D, 0x40, LocationType.LottoCode, 0x754BD8, 67, [0]),
+    LocationData(LocationName.Lotto_Code_11, 0xB610E2, 0x0200214D, 0x20, LocationType.LottoCode, 0x754BD8, 68, [0]),
+    LocationData(LocationName.Lotto_Code_12, 0xB610E3, 0x0200214D, 0x10, LocationType.LottoCode, 0x754BD8, 69, [0]),
+    LocationData(LocationName.Lotto_Code_13, 0xB610E4, 0x0200214D, 0x08, LocationType.LottoCode, 0x754BD8, 70, [0]),
+    LocationData(LocationName.Lotto_Code_14, 0xB610E5, 0x0200214D, 0x04, LocationType.LottoCode, 0x754BD8, 71, [0]),
+    LocationData(LocationName.Lotto_Code_15, 0xB610E6, 0x0200214D, 0x02, LocationType.LottoCode, 0x754BD8, 72, [0]),
+    LocationData(LocationName.Lotto_Code_16, 0xB610E7, 0x0200214D, 0x01, LocationType.LottoCode, 0x754BD8, 73, [0]),
+    LocationData(LocationName.Lotto_Code_17, 0xB610E8, 0x0200214E, 0x80, LocationType.LottoCode, 0x754BD8, 74, [0]),
+    LocationData(LocationName.Lotto_Code_18, 0xB610E9, 0x0200214E, 0x40, LocationType.LottoCode, 0x754BD8, 75, [0]),
+    LocationData(LocationName.Lotto_Code_19, 0xB610EA, 0x0200214E, 0x20, LocationType.LottoCode, 0x754BD8, 76, [0]),
+    LocationData(LocationName.Lotto_Code_20, 0xB610EB, 0x0200214E, 0x10, LocationType.LottoCode, 0x754BD8, 77, [0]),
+    LocationData(LocationName.Lotto_Code_21, 0xB610EC, 0x0200214E, 0x08, LocationType.LottoCode, 0x754BD8, 78, [0]),
+    LocationData(LocationName.Lotto_Code_22, 0xB610ED, 0x0200214E, 0x04, LocationType.LottoCode, 0x754BD8, 79, [0]),
+    LocationData(LocationName.Lotto_Code_23, 0xB610EE, 0x0200214E, 0x02, LocationType.LottoCode, 0x754BD8, 80, [0]),
+    LocationData(LocationName.Lotto_Code_24, 0xB610EF, 0x0200214E, 0x01, LocationType.LottoCode, 0x754BD8, 81, [0]),
+    LocationData(LocationName.Lotto_Code_25, 0xB610F0, 0x0200214F, 0x80, LocationType.LottoCode, 0x754BD8, 82, [0]),
+    LocationData(LocationName.Lotto_Code_26, 0xB610F1, 0x0200214F, 0x40, LocationType.LottoCode, 0x754BD8, 83, [0]),
+    LocationData(LocationName.Lotto_Code_27, 0xB610F2, 0x0200214F, 0x20, LocationType.LottoCode, 0x754BD8, 84, [0]),
+    LocationData(LocationName.Lotto_Code_28, 0xB610F3, 0x0200214F, 0x10, LocationType.LottoCode, 0x754BD8, 85, [0]),
+    LocationData(LocationName.Lotto_Code_29, 0xB610F4, 0x0200214F, 0x08, LocationType.LottoCode, 0x754BD8, 86, [0]),
+    LocationData(LocationName.Lotto_Code_30, 0xB610F5, 0x0200214F, 0x04, LocationType.LottoCode, 0x754BD8, 87, [0]),
+    LocationData(LocationName.Lotto_Code_31, 0xB610F6, 0x0200214F, 0x02, LocationType.LottoCode, 0x754BD8, 88, [0]),
+    LocationData(LocationName.Lotto_Code_32, 0xB610F7, 0x0200214F, 0x01, LocationType.LottoCode, 0x754BD8, 89, [0]),
+    LocationData(LocationName.Lotto_Code_33, 0xB610F8, 0x02002150, 0x80, LocationType.LottoCode, 0x754BD8, 90, [0]),
+    LocationData(LocationName.Lotto_Code_34, 0xB610F9, 0x02002150, 0x40, LocationType.LottoCode, 0x754BD8, 91, [0]),
+    LocationData(LocationName.Lotto_Code_35, 0xB610FA, 0x02002150, 0x20, LocationType.LottoCode, 0x754BD8, 92, [0]),
+    LocationData(LocationName.Lotto_Code_36, 0xB610FB, 0x02002150, 0x10, LocationType.LottoCode, 0x754BD8, 93, [0]),
+    LocationData(LocationName.Lotto_Code_37, 0xB610FC, 0x02002150, 0x08, LocationType.LottoCode, 0x754BD8, 94, [0]),
+    LocationData(LocationName.Lotto_Code_38, 0xB610FD, 0x02002150, 0x04, LocationType.LottoCode, 0x754BD8, 95, [0]),
+    LocationData(LocationName.Lotto_Code_39, 0xB610FE, 0x02002150, 0x02, LocationType.LottoCode, 0x754BD8, 96, [0]),
+    LocationData(LocationName.Lotto_Code_40, 0xB610FF, 0x02002150, 0x01, LocationType.LottoCode, 0x754BD8, 97, [0]),
+    LocationData(LocationName.Lotto_Code_41, 0xB61100, 0x02002151, 0x80, LocationType.LottoCode, 0x754BD8, 98, [0]),
+    LocationData(LocationName.Lotto_Code_42, 0xB61101, 0x02002151, 0x40, LocationType.LottoCode, 0x754BD8, 99, [0]),
+    LocationData(LocationName.Lotto_Code_43, 0xB61102, 0x02002151, 0x20, LocationType.LottoCode, 0x754BD8, 100, [0]),
+    LocationData(LocationName.Lotto_Code_44, 0xB61103, 0x02002151, 0x10, LocationType.LottoCode, 0x754BD8, 101, [0]),
+    LocationData(LocationName.Lotto_Code_45, 0xB61104, 0x02002151, 0x08, LocationType.LottoCode, 0x754BD8, 102, [0]),
+    LocationData(LocationName.Lotto_Code_46, 0xB61105, 0x02002151, 0x04, LocationType.LottoCode, 0x754BD8, 103, [0]),
+    LocationData(LocationName.Lotto_Code_47, 0xB61106, 0x02002151, 0x02, LocationType.LottoCode, 0x754BD8, 104, [0]),
+    LocationData(LocationName.Lotto_Code_48, 0xB61107, 0x02002151, 0x01, LocationType.LottoCode, 0x754BD8, 105, [0]),
+    LocationData(LocationName.Lotto_Code_49, 0xB61108, 0x02002152, 0x80, LocationType.LottoCode, 0x754BD8, 106, [0]),
+    LocationData(LocationName.Lotto_Code_50, 0xB61109, 0x02002152, 0x40, LocationType.LottoCode, 0x754BD8, 107, [0]),
+    LocationData(LocationName.Lotto_Code_51, 0xB6110A, 0x02002152, 0x20, LocationType.LottoCode, 0x754BD8, 108, [0]),
+    LocationData(LocationName.Lotto_Code_52, 0xB6110B, 0x02002152, 0x10, LocationType.LottoCode, 0x754BD8, 109, [0]),
+    LocationData(LocationName.Lotto_Code_53, 0xB6110C, 0x02002152, 0x08, LocationType.LottoCode, 0x754BD8, 110, [0]),
+    LocationData(LocationName.Lotto_Code_54, 0xB6110D, 0x02002152, 0x04, LocationType.LottoCode, 0x754BD8, 111, [0]),
+    LocationData(LocationName.Lotto_Code_55, 0xB6110E, 0x02002152, 0x02, LocationType.LottoCode, 0x754BD8, 112, [0]),
+    LocationData(LocationName.Lotto_Code_56, 0xB6110F, 0x02002152, 0x01, LocationType.LottoCode, 0x754BD8, 113, [0]),
+    LocationData(LocationName.Lotto_Code_57, 0xB61110, 0x02002153, 0x80, LocationType.LottoCode, 0x754BD8, 114, [0]),
+    LocationData(LocationName.Lotto_Code_58, 0xB61111, 0x02002153, 0x40, LocationType.LottoCode, 0x754BD8, 115, [0])
 ]
 
-chocolate_shop = [
-    LocationData(LocationName.Chocolate_Shop_01, 0xb310ee, 0x20001c0, 0x80, 0x73F8FC, 150, [0]),
-    LocationData(LocationName.Chocolate_Shop_02, 0xb310ef, 0x20001c0, 0x40, 0x73F8FC, 151, [0]),
-    LocationData(LocationName.Chocolate_Shop_03, 0xb310f0, 0x20001c0, 0x20, 0x73F8FC, 152, [0]),
-    LocationData(LocationName.Chocolate_Shop_04, 0xb310f1, 0x20001c0, 0x10, 0x73F8FC, 153, [0]),
-    LocationData(LocationName.Chocolate_Shop_05, 0xb310f2, 0x20001c0, 0x08, 0x73F8FC, 154, [0]),
-    LocationData(LocationName.Chocolate_Shop_06, 0xb310f3, 0x20001c0, 0x04, 0x73F8FC, 155, [0]),
-    LocationData(LocationName.Chocolate_Shop_07, 0xb310f4, 0x20001c0, 0x02, 0x73F8FC, 156, [0]),
-    LocationData(LocationName.Chocolate_Shop_08, 0xb310f5, 0x20001c0, 0x01, 0x73F8FC, 157, [0]),
-
-    LocationData(LocationName.Chocolate_Shop_09, 0xb310f6, 0x20001c1, 0x80, 0x73F8FC, 158, [0]),
-    LocationData(LocationName.Chocolate_Shop_10, 0xb310f7, 0x20001c1, 0x40, 0x73F8FC, 159, [0]),
-    LocationData(LocationName.Chocolate_Shop_11, 0xb310f8, 0x20001c1, 0x20, 0x73F8FC, 160, [0]),
-    LocationData(LocationName.Chocolate_Shop_12, 0xb310f9, 0x20001c1, 0x10, 0x73F8FC, 161, [0]),
-    LocationData(LocationName.Chocolate_Shop_13, 0xb310fa, 0x20001c1, 0x08, 0x73F8FC, 162, [0]),
-    LocationData(LocationName.Chocolate_Shop_14, 0xb310fb, 0x20001c1, 0x04, 0x73F8FC, 163, [0]),
-    LocationData(LocationName.Chocolate_Shop_15, 0xb310fc, 0x20001c1, 0x02, 0x73F8FC, 164, [0]),
-    LocationData(LocationName.Chocolate_Shop_16, 0xb310fd, 0x20001c1, 0x01, 0x73F8FC, 165, [0]),
-
-    LocationData(LocationName.Chocolate_Shop_17, 0xb310fe, 0x20001c2, 0x80, 0x73F8FC, 166, [0]),
-    LocationData(LocationName.Chocolate_Shop_18, 0xb310ff, 0x20001c2, 0x40, 0x73F8FC, 167, [0]),
-    LocationData(LocationName.Chocolate_Shop_19, 0xb31100, 0x20001c2, 0x20, 0x73F8FC, 168, [0]),
-    LocationData(LocationName.Chocolate_Shop_20, 0xb31101, 0x20001c2, 0x10, 0x73F8FC, 169, [0]),
-    LocationData(LocationName.Chocolate_Shop_21, 0xb31102, 0x20001c2, 0x08, 0x73F8FC, 170, [0]),
-    LocationData(LocationName.Chocolate_Shop_22, 0xb31103, 0x20001c2, 0x04, 0x73F8FC, 171, [0]),
-    LocationData(LocationName.Chocolate_Shop_23, 0xb31104, 0x20001c2, 0x02, 0x73F8FC, 172, [0]),
-    LocationData(LocationName.Chocolate_Shop_24, 0xb31105, 0x20001c2, 0x01, 0x73F8FC, 173, [0]),
-
-    LocationData(LocationName.Chocolate_Shop_25, 0xb31106, 0x20001c3, 0x80, 0x73F8FC, 174, [0]),
-    LocationData(LocationName.Chocolate_Shop_26, 0xb31107, 0x20001c3, 0x40, 0x73F8FC, 175, [0]),
-    LocationData(LocationName.Chocolate_Shop_27, 0xb31108, 0x20001c3, 0x20, 0x73F8FC, 176, [0]),
-    LocationData(LocationName.Chocolate_Shop_28, 0xb31109, 0x20001c3, 0x10, 0x73F8FC, 177, [0]),
-    LocationData(LocationName.Chocolate_Shop_29, 0xb3110a, 0x20001c3, 0x08, 0x73F8FC, 178, [0]),
-    LocationData(LocationName.Chocolate_Shop_30, 0xb3110b, 0x20001c3, 0x04, 0x73F8FC, 179, [0]),
-    LocationData(LocationName.Chocolate_Shop_31, 0xb3110c, 0x20001c3, 0x02, 0x73F8FC, 180, [0]),
-    LocationData(LocationName.Chocolate_Shop_32, 0xb3110d, 0x20001c3, 0x01, 0x73F8FC, 181, [0]),
+bosses = [
+    LocationData(LocationName.BlastMan_EX,   0xB61112, 0x0200206C, 0x40, LocationType.Boss)
+    LocationData(LocationName.DiveMan_EX,    0xB61113, 0x0200206C, 0x08, LocationType.Boss)
+    LocationData(LocationName.CircusMan_EX,  0xB61114, 0x0200206C, 0x01, LocationType.Boss)
+    LocationData(LocationName.JudgeMan_EX,   0xB61115, 0x0200206D, 0x20, LocationType.Boss)
+    LocationData(LocationName.ElementMan_EX, 0xB61116, 0x0200206D, 0x04, LocationType.Boss)
+    LocationData(LocationName.Colonel_EX,    0xB61117, 0x0200206E, 0x80, LocationType.Boss)
+    LocationData(LocationName.BlastMan_SP,   0xB61118, 0x02001CF0, 0x04, LocationType.Boss)
+    LocationData(LocationName.DiveMan_SP,    0xB61119, 0x02001CF1, 0x10, LocationType.Boss)
+    LocationData(LocationName.CircusMan_SP,  0xB6111A, 0x02001CF2, 0x40, LocationType.Boss)
+    LocationData(LocationName.JudgeMan_SP,   0xB6111B, 0x02001CF2, 0x01, LocationType.Boss)
+    LocationData(LocationName.ElementMan_SP, 0xB6111C, 0x02001CF3, 0x04, LocationType.Boss)
+    LocationData(LocationName.Colonel_SP,    0xB6111D, 0x02001CF5, 0x40, LocationType.Boss)
 ]
 
-secret_locations = {
-    LocationName.Secret_1_Northwest_BMD,
-    LocationName.Secret_1_Northeast_BMD,
-    LocationName.Secret_1_South_BMD,
-    LocationName.Secret_2_Upper_BMD,
-    LocationName.Secret_2_Lower_BMD,
-    LocationName.Secret_2_Island_BMD,
-    LocationName.Secret_3_Island_BMD,
-    LocationName.Secret_3_BugFrag_BMD,
-    LocationName.Secret_3_South_BMD,
-    LocationName.Serenade
+graveyard_locations = {
+    Graveyard_BMD_1,
+    Graveyard_BMD_2,
+    Graveyard_BMD_3,
+    Graveyard_BMD_4,
+    Graveyard_BMD_5
 }
 
 location_groups: typing.Dict[str, typing.Set[str]] = {
     "BMDs": {loc.name for loc in bmds},
     "PMDs": {loc.name for loc in pmds},
-    "Jobs": {loc.name for loc in jobs},
-    "Number Trader": {loc.name for loc in number_traders},
-    "Bugfrag Trader": {loc.name for loc in chocolate_shop},
-    "Secret Area": {LocationName.Secret_1_Northwest_BMD, LocationName.Secret_1_Northeast_BMD,
-                    LocationName.Secret_1_South_BMD, LocationName.Secret_2_Upper_BMD, LocationName.Secret_2_Lower_BMD,
-                    LocationName.Secret_2_Island_BMD, LocationName.Secret_3_Island_BMD,
-                    LocationName.Secret_3_BugFrag_BMD, LocationName.Secret_3_South_BMD, LocationName.Serenade},
+    "OverWorlds": {loc.name for loc in overworlds}
+    "Jobs": {loc.name for loc in requests},
+    "Lotto Codes": {loc.name for loc in lotto_codes},
+    "Bosses": {loc.name for loc in bosses},
+    "Graveyard Area": {LocationName.Graveyard_BMD_1, LocationName.Graveyard_BMD_2,
+                    LocationName.Graveyard_BMD_3, LocationName.Graveyard_BMD_4, LocationName.Graveyard_BMD_5},
 }
 
-all_locations: typing.List[LocationData] = bmds + pmds + overworlds + jobs + number_traders + chocolate_shop
+all_locations: typing.List[LocationData] = bmds + pmds + overworlds + jobs + lotto_codes + bosses
 scoutable_locations: typing.List[LocationData] = [loc for loc in all_locations if loc.hint_flag is not None]
 location_table: typing.Dict[str, int] = {locData.name: locData.id for locData in all_locations}
 location_data_table: typing.Dict[str, LocationData] = {locData.name: locData for locData in all_locations}
