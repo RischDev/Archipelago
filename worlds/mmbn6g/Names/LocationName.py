@@ -3,7 +3,7 @@ from enum import Enum
 
 class LocationName():
     ## Blue Mystery Data
-    #
+    #Robo Control Comps
     Robot_Control_Comp_1_BMD_1 = "Robot Control Comp 1 BMD 1"
     Robot_Control_Comp_1_BMD_2 = "Robot Control Comp 1 BMD 2"
     Robot_Control_Comp_2_BMD_1 = "Robot Control Comp 2 BMD 1"
@@ -210,7 +210,7 @@ class LocationName():
     Sky_1_Brown_Navi = "Sky 1 Brown Navi"
     Bass = "Bass"
     Talk_To_Mayl = "Talk To Mayl"
-    
+
     ## Requests
     Virus_Deletion = "Request: Virus Deletion"
     Find_Keepsake = "Request: Find Keepsake"
@@ -313,7 +313,7 @@ class LocationName():
     Lotto_Code_56 = "Lotto Code 56"
     Lotto_Code_57 = "Lotto Code 57"
     Lotto_Code_58 = "Lotto Code 58"
-    
+
     ## Bosses
     BlastMan_EX = "BlastMan EX"
     DiveMan_EX = "DiveMan EX"
@@ -327,3 +327,6 @@ class LocationName():
     JudgeMan_SP = "JudgeMan SP"
     ElementMan_SP = "ElementMan SP"
     Colonel_SP = "Colonel SP"
+
+    ## Victory
+    Gregar_Defeated = "Gregar Defeated"
