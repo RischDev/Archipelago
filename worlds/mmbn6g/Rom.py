@@ -8,10 +8,10 @@ import bsdiff4
 from .lz10 import gba_decompress, gba_compress
 
 from .BN6RomUtils import ArchiveToReferences, read_u16_le, read_u32_le, int16_to_byte_list_le, int32_to_byte_list_le, \
-    generate_progressive_undernet, ArchiveToSizeComp, ArchiveToSizeUncomp, generate_item_message, \
-    generate_external_item_message, generate_text_bytes, dictChar
+    ArchiveToSizeComp, ArchiveToSizeUncomp, generate_item_message, generate_external_item_message, generate_text_bytes, dictChar
 
 from .Items import ItemType
+from .Locations import LocationType
 
 CHECKSUM_GREG = "5acc75848bb1ffd3d6d8705554ee333d"
 
@@ -45,41 +45,21 @@ class ArchiveScript:
         self.messageBoxes = []
 
         message_box = []
-        # message_box_chars = []
 
-        command_index = 0
-        byte_index = 0
         for byte in message_bytes:
             byte_index += 1
-            if command_index <= 0 and (byte == 0xE9 or byte == 0xE7):
-                if byte == 0xE9:  # More textboxes to come, don't end it yet
+            if byte == 0xF2 or byte == 0xE6:
+                if byte == 0xF2:  # More textboxes to come, don't end it yet
                     message_box.append(byte)
-                    # message_box_chars.append(hex(byte))
                     self.messageBoxes.append(message_box)
                 else:  # It's the end of the script, add another message to end it after this one
                     self.messageBoxes.append(message_box)
-                    self.messageBoxes.append([0xE7])
+                    self.messageBoxes.append([0xE6])
 
                 message_box = []
-                message_box_chars = []
 
             else:
-                if command_index <= 0:
-                    # We can hit a command that might contain an E9 or an E7. If we do, skip checking the next few bytes
-                    if byte == 0xF6:  # CheckItem
-                        command_index = 7
-                    if byte == 0xF3:  # CheckFlag
-                        # For whatever reason, the "Check Navi Customizer" command is one byte shorter than the other
-                        # Check flags. If the next byte is 0x28, our command is only 5 bytes long.
-                        if message_bytes[byte_index] == 0x28:
-                            command_index = 5
-                        else:
-                            command_index = 6
-                    if byte == 0xF2:  # FlagSet
-                        command_index = 4
-                command_index -= 1
                 message_box.append(byte)
-                # message_box_chars.append(dictChar[byte] if byte in dictChar else hex(byte))
 
         # If there's still bytes left over, add them even if we didn't hit an end
         if len(message_box) > 0:
@@ -99,7 +79,6 @@ class TextArchive:
         self.scriptCount = 0xFF
         self.references = ArchiveToReferences[offset]
         self.unused_indices = []  # A list of places it's okay to inject new scripts
-        self.progressive_undernet_indices = []  # If this archive has progressive undernet, here they are in order
 
         self.text_changed = False
 
@@ -154,10 +133,10 @@ class TextArchive:
             # print(hex(self.startOffset) + ": " + str(script_index) + " " + str(message_indices))
             oldbytes = self.scripts[script_index].messageBoxes[message_index]
             for i in range(len(oldbytes)-3):
-                # F2 00 is the code for "flagSet", with the two bytes after it being the flag to set.
-                # F2 04 is the code for "flagClear", which also needs to come along for the ride
+                # EA 00 is the code for "flagSet", with the two bytes after it being the flag to set.
+                # EA 01 is the code for "flagClear", which also needs to come along for the ride
                 # Add those to the message box after the other text.
-                if oldbytes[i] == 0xF2 and (oldbytes[i+1] == 0x00 or oldbytes[i+1] == 0x04):
+                if oldbytes[i] == 0xEA and (oldbytes[i+1] == 0x00 or oldbytes[i+1] == 0x01):
                     flag = oldbytes[i:i+4]
                     new_bytes.extend(flag)
 
@@ -179,19 +158,6 @@ class TextArchive:
         for offset in self.references:
             modified_rom_data[offset:offset+4] = offset_byte
         return modified_rom_data
-
-    def add_progression_scripts(self):
-        if len(self.unused_indices) < 9:
-            # As far as I know, this should literally not be possible.
-            # Every script I've looked at has dozens of unused indices, so finding 9 (8 plus one "ending" script)
-            # should be no problem. We re-use these so we don't have to worry about an area getting tons of these
-            raise AssertionError("Error in generation -- not enough room for progressive undernet in archive "+self.startOffset)
-        for i in range(9):  # There are 8 progressive undernet ranks
-            new_script_index = self.unused_indices[i]
-            new_script = ArchiveScript(new_script_index, generate_progressive_undernet(i, self.unused_indices[i+1]))
-            self.scripts[new_script_index] = new_script
-            self.progressive_undernet_indices.append(new_script_index)
-        self.unused_indices = self.unused_indices[9:]  # Remove the first eight elements
 
     def inject_item_text(self, item_text, next_message=""):
         item_text_bytes = generate_text_bytes(item_text)
@@ -228,51 +194,44 @@ class LocalRom:
         return self.rom_data[start_offset:start_offset + size]
 
     def replace_item(self, location, item):
-        offset = location.text_archive_address
-        # If the archive is already loaded, use that
-        if offset in self.changed_archives:
-            archive = self.changed_archives[offset]
+        offset = location.update_address
+
+        # For Mystery Data, we need to update the Mystery Data table. For everything else, we update the Text Archive.
+        if (location.type == LocationType.BlueMysteryData or location.type == LocationType.PurpleMysteryData):
+            if item.type == ItemType.External:
+                self.rom_data = update_mystery_data_external(self.rom_data, offset)
+            else:
+                self.rom_data = update_mystery_data(self.rom_data, offset, item.type, item.itemId, item.subItemId, item.count)
         else:
-            is_compressed = offset in ArchiveToSizeComp.keys()
-            size = ArchiveToSizeComp[offset] if is_compressed\
-                else ArchiveToSizeUncomp[offset]
-            data = self.get_data_chunk(offset, size)
-            # Check if the archive we want to load has been moved by the patch. This is indicated by a 0xFF 0xFF
-            # as the first two bytes of the chunk
+            # If the archive is already loaded, use that
+            if offset in self.changed_archives:
+                archive = self.changed_archives[offset]
+            else:
+                is_compressed = offset in ArchiveToSizeComp.keys()
+                size = ArchiveToSizeComp[offset] if is_compressed\
+                    else ArchiveToSizeUncomp[offset]
+                data = self.get_data_chunk(offset, size)
+                # Check if the archive we want to load has been moved by the patch. This is indicated by a 0xFF 0xFF
+                # as the first two bytes of the chunk
 
-            if data[0] == 0xFF and data[1] == 0xFF:
-                new_size_bytes = data[2:4]
-                new_address_le = data[4:8]
-                # Last byte should be zero since we're dealing with purely ROM address space
-                new_address_le[3] = 0x0
-                size = read_u16_le(new_size_bytes, 0)
-                data = self.get_data_chunk(read_u32_le(new_address_le, 0), size)
+                if data[0] == 0xFF and data[1] == 0xFF:
+                    new_size_bytes = data[2:4]
+                    new_address_le = data[4:8]
+                    # Last byte should be zero since we're dealing with purely ROM address space
+                    new_address_le[3] = 0x0
+                    size = read_u16_le(new_size_bytes, 0)
+                    data = self.get_data_chunk(read_u32_le(new_address_le, 0), size)
 
 
-            archive = TextArchive(data, offset, size, is_compressed)
-            self.changed_archives[offset] = archive
+                archive = TextArchive(data, offset, size, is_compressed)
+                self.changed_archives[offset] = archive
 
-        if item.type == ItemType.Undernet:
-            if len(archive.progressive_undernet_indices) == 0:
-                archive.add_progression_scripts() # Generate the new scripts
-            # Replace the item text box as normal. We just also add a new jump at the end of the script
-            item_bytes = generate_item_message(item)
-            changed_script = archive.scripts[location.text_script_index]
-            # There isn't a "Jump unconditional", so we fake one. Check flag 0 and jump
-            # to the start of our progression regardless of outcome
-            jump_to_first_undernet_bytes = [0xF3, 0x00,
-                                            0x00, 0x00,
-                                            archive.progressive_undernet_indices[0],
-                                            archive.progressive_undernet_indices[0]]
-            # Insert the new message second-to-last (the last index should be an end all by itself)
-            changed_script.messageBoxes.insert(-1, jump_to_first_undernet_bytes)
-            # item_bytes = jump_to_first_undernet_bytes
-        elif item.type == ItemType.External:
-            item_bytes = generate_external_item_message(item.itemName, item.recipient)
-        else:
-            item_bytes = generate_item_message(item)
-        archive.inject_item_message(location.text_script_index, location.text_box_indices,
-                                    item_bytes)
+            if item.type == ItemType.External:
+                item_bytes = generate_external_item_message(item.itemName, item.recipient)
+            else:
+                item_bytes = generate_item_message(item)
+            archive.inject_item_message(location.text_script_index, location.text_box_indices,
+                                        item_bytes)
 
 
     def insert_hint_text(self, location, short_text, long_text = ""):
@@ -307,10 +266,10 @@ class LocalRom:
             rom.write(self.rom_data)
 
 
-class MMBN3DeltaPatch(APDeltaPatch):
-    hash = CHECKSUM_BLUE
-    game = "MegaMan Battle Network 3"
-    patch_file_ending = ".apbn3"
+class MMBN6DeltaPatch(APDeltaPatch):
+    hash = CHECKSUM_GREG
+    game = "MegaMan Battle Network 6: Cybeast Gregar"
+    patch_file_ending = ".apbn6"
     result_file_ending = ".gba"
 
     @classmethod
@@ -321,11 +280,11 @@ class MMBN3DeltaPatch(APDeltaPatch):
 def get_base_rom_path(file_name: str = "") -> str:
     options = Utils.get_options()
     if not file_name:
-        bn3_options = options.get("mmbn3_options", None)
-        if bn3_options is None:
-            file_name = "Mega Man Battle Network 3 - Blue Version (USA).gba"
+        bn6_options = options.get("mmbn6_options", None)
+        if bn6_options is None:
+            file_name = "Mega Man Battle Network 6 - Cybeast Gregar.gba"
         else:
-            file_name = bn3_options["rom_file"]
+            file_name = bn6_options["rom_file"]
     if not os.path.exists(file_name):
         file_name = Utils.local_path(file_name)
     return file_name
@@ -339,8 +298,8 @@ def get_base_rom_bytes(file_name: str = "") -> bytes:
 
         basemd5 = hashlib.md5()
         basemd5.update(base_rom_bytes)
-        if CHECKSUM_BLUE != basemd5.hexdigest():
-            raise Exception('Supplied Base Rom does not match US GBA Blue Version.'
+        if CHECKSUM_GREG != basemd5.hexdigest():
+            raise Exception('Supplied Base Rom does not match US GBA Gregar Version.'
                             'Please provide the correct ROM version')
 
         get_base_rom_bytes.base_rom_bytes = base_rom_bytes
@@ -350,11 +309,11 @@ def get_base_rom_bytes(file_name: str = "") -> bytes:
 def get_patched_rom_bytes(file_name: str = "") -> bytes:
     """
     Gets the patched ROM data generated from applying the ap-patch diff file to the provided ROM.
-    Diff patch generated by https://github.com/digiholic/bn3-ap-patch
+    Diff patch generated by https://github.com/RischDev/bn6g-ap-patch
     Which should contain all changed text banks and assembly code
     """
     import pkgutil
     base_rom_bytes = get_base_rom_bytes(file_name)
-    patch_bytes = pkgutil.get_data(__name__, "data/bn3-ap-patch.bsdiff")
+    patch_bytes = pkgutil.get_data(__name__, "data/bn6-ap-patch.bsdiff")
     patched_rom_bytes = bsdiff4.patch(base_rom_bytes, patch_bytes)
     return patched_rom_bytes

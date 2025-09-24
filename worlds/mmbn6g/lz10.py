@@ -2,6 +2,8 @@ from collections import defaultdict
 from operator import itemgetter
 from struct import pack, unpack
 
+from .BN6RomUtils import int32_to_byte_list_le
+
 """
 Tweaked version of nlzss modified to work with raw data and return bytes instead of operating on whole files.
 LZ11 functionality has been removed since it is not necessary for MMBN3
@@ -20,10 +22,17 @@ def gba_decompress(data: bytearray):
     decompressed_size, = unpack("<L", header[1:] + b'\x00')
 
     data = data[4:]
-    return decompress_raw(data, decompressed_size)
+
+    # In BN6, the compressed data has a 4-byte header that includes the size. We don't care about that for now.
+    decompressed = decompress_raw(data, decompressed_size)
+    return decompressed[4:]
 
 
 def gba_compress(data: bytearray):
+    # In BN6, the compressed data has a 4-byte header that includes the size. Add this header to the decompressed data first.0
+    size = int32_to_byte_list_le(len(data))
+    data = size + data
+
     byteOut = bytearray()
     # header
     byteOut.extend(pack("<L", (len(data) << 8) + 0x10))
