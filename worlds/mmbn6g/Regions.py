@@ -6,6 +6,7 @@ class RegionName:
     Menu = "Menu"
     Central_Overworld = "Central Overworld"
     Central_Cyberworld = "Central Cyberworld"
+    Central3_and_Underground = "Central3 and Underground"
     Seaside_Overworld = "Seaside Overworld"
     Seaside_Cyberworld = "Seaside Cyberworld"
     Green_Overworld = "Green Overworld"
@@ -58,8 +59,6 @@ regions = [
                     LocationName.Monitor_Comp_BMD,
                     LocationName.Principals_Office_Comp_BMD_1,
                     LocationName.Principals_Office_Comp_BMD_2,
-                    LocationName.Underground_2_BMD_1,
-                    LocationName.Underground_2_BMD_2,
                     LocationName.Class_6_2_Comp_PMD,
                     LocationName.Labs_Comp_2_PMD,
                     LocationName.School_Mr_Quiz,
@@ -69,6 +68,7 @@ regions = [
                     LocationName.Principals_Coffee_Table,
                     LocationName.Class_1_2_Heel_Navi,
                     LocationName.Talk_To_Mayl,
+                    LocationName.EraseMan_Class,
                     LocationName.Virus_Deletion,
                     LocationName.Find_Keepsake,
                     LocationName.Errand_Request,
@@ -141,23 +141,29 @@ regions = [
                     LocationName.Lotto_Code_58
                ]),
     RegionInfo(RegionName.Central_Cyberworld,
-               [RegionName.Seaside_Cyberworld, RegionName.Green_Cyberworld, RegionName.Sky_Cyberworld, RegionName.ACDC_Cyberworld],
+               [RegionName.Central3_and_Underground],
                [
                     LocationName.Central_Area_1_BMD_1,
                     LocationName.Central_Area_1_BMD_2,
                     LocationName.Central_Area_2_BMD_1,
                     LocationName.Central_Area_2_BMD_2,
-                    LocationName.Central_Area_3_BMD,
-                    LocationName.Central_Area_3_PMD,
-                    LocationName.Underground_1_PMD_1,
-                    LocationName.Underground_1_PMD_2,
                     LocationName.Central_1_Net_Cafe,
                     LocationName.Central_2_Heel_Navi,
                     LocationName.For_Victory,
                     LocationName.BlastMan_EX,
+                    LocationName.BlastMan_SP,
+               ]),
+    RegionInfo(RegionName.Central3_and_Underground,
+               [RegionName.Central_Cyberworld, RegionName.Seaside_Cyberworld, RegionName.Green_Cyberworld, RegionName.Sky_Cyberworld, RegionName.ACDC_Cyberworld],
+               [
+                    LocationName.Central_Area_3_BMD,
+                    LocationName.Central_Area_3_PMD,
+                    LocationName.Underground_2_BMD_1,
+                    LocationName.Underground_2_BMD_2,
+                    LocationName.Underground_1_PMD_1,
+                    LocationName.Underground_1_PMD_2,
                     LocationName.CircusMan_EX,
                     LocationName.Colonel_EX,
-                    LocationName.BlastMan_SP,
                     LocationName.CircusMan_SP,
                     LocationName.Colonel_SP
                ]),
@@ -184,6 +190,7 @@ regions = [
                     LocationName.Seaside_Control_Room_Ladder,
                     LocationName.Seaside_Auditorium_Man,
                     LocationName.Aquarium_Comp_1_Navi,
+                    LocationName.ChargeMan_Class,
                     LocationName.Stock_Up,
                     LocationName.PenguinsRanAway,
                     LocationName.Got_A_Problem,
@@ -198,7 +205,7 @@ regions = [
                     LocationName.An_Experiment_3
                ]),
     RegionInfo(RegionName.Seaside_Cyberworld,
-               [RegionName.Central_Cyberworld],
+               [RegionName.Central3_and_Underground],
                [
                     LocationName.Aquarium_HP_BMD,
                     LocationName.Stuffed_Toy_Shop_Comp_BMD_1,
@@ -212,7 +219,7 @@ regions = [
                     LocationName.Seaside_Area_3_BMD,
                     LocationName.Aquarium_HP_PMD,
                     LocationName.Seaside_Area_3_PMD,
-                    LocationName.Aquarium_PnlRetrn_*_Trade,
+                    LocationName.Aquarium_PnlRetrn_star_Trade,
                     LocationName.Get_The_Chip,
                     LocationName.StandIn_Recruit,
                     LocationName.DiveMan_EX,
@@ -237,12 +244,13 @@ regions = [
                     LocationName.Green_HolyPnl_S_Trade,
                     LocationName.Green_Foyer_Flowers,
                     LocationName.Green_Punishment_Room_Prog,
+                    LocationName.SlashMan_Class,
                     LocationName.Daughter_Worry,
                     LocationName.Stop_Him,
                     LocationName.TimeCpsl
                ]),
     RegionInfo(RegionName.Green_Cyberworld,
-               [RegionName.Central_Cyberworld],
+               [RegionName.Central3_and_Underground],
                [
                     LocationName.Green_HP_BMD,
                     LocationName.Green_Area_1_BMD_1,
@@ -289,6 +297,7 @@ regions = [
                     LocationName.AirCon_AuraHed1_B_Trade,
                     LocationName.Sky_GrabRvng_I_Trade,
                     LocationName.Sky_Air_Tank,
+                    LocationName.ElecMan_Class,
                     LocationName.OfficialRequest_1,
                     LocationName.OfficialRequest_2,
                     LocationName.OfficialRequest_3,
@@ -296,7 +305,7 @@ regions = [
                     LocationName.Negotiate
                ]),
     RegionInfo(RegionName.Sky_Cyberworld,
-               [RegionName.Central_Cyberworld, RegionName.Undernet],
+               [RegionName.Central3_and_Underground, RegionName.Undernet],
                [
                     LocationName.Sky_HP_BMD,
                     LocationName.Sky_Area_1_BMD_1,
@@ -322,7 +331,7 @@ regions = [
                     LocationName.ACDC_Dexs_Door
                ]),
     RegionInfo(RegionName.ACDC_Cyberworld,
-               [RegionName.Central_Cyberworld],
+               [RegionName.Central3_and_Underground],
                [
                     LocationName.ACDC_HP_BMD,
                     LocationName.ACDC_Area_BMD_1,
