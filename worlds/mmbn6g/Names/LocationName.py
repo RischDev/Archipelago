@@ -181,7 +181,7 @@ class LocationName():
     Aquarium_Quiz_Master = "Aquarium Quiz Master"
     Green_Quiz_King = "Green Quiz King"
     Central_Barr100_H_Trade = "Central Barr100 H Trade"
-    Aquarium_PnlRetrn_*_Trade = "Aquarium PnlRetrn * Trade"
+    Aquarium_PnlRetrn_star_Trade = "Aquarium PnlRetrn * Trade"
     Green_HolyPnl_S_Trade = "Green HolyPnl S Trade"
     AirCon_AuraHed1_B_Trade = "AirCon AuraHed1 B Trade"
     Class_1_2_EnergBom_K_Trade = "Class 1-2 EnergBom K Trade"
@@ -210,6 +210,10 @@ class LocationName():
     Sky_1_Brown_Navi = "Sky 1 Brown Navi"
     Bass = "Bass"
     Talk_To_Mayl = "Talk To Mayl"
+    ElecMan_Class = "ElecMan Class"
+    SlashMan_Class = "SlashMan Class"
+    EraseMan_Class = "EraseMan Class"
+    ChargeMan_Class = "ChargeMan Class"
 
     ## Requests
     Virus_Deletion = "Request: Virus Deletion"
