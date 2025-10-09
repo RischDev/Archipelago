@@ -8,7 +8,8 @@ import bsdiff4
 from .lz10 import gba_decompress, gba_compress
 
 from .BN6RomUtils import ArchiveToReferences, read_u16_le, read_u32_le, int16_to_byte_list_le, int32_to_byte_list_le, \
-    ArchiveToSizeComp, ArchiveToSizeUncomp, generate_item_message, generate_external_item_message, generate_text_bytes, dictChar
+    ArchiveToSizeComp, ArchiveToSizeUncomp, generate_item_message, generate_external_item_message, generate_text_bytes, dictChar, \
+    update_mystery_data, update_mystery_data_external
 
 from .Items import ItemType
 from .Locations import LocationType
@@ -46,6 +47,7 @@ class ArchiveScript:
 
         message_box = []
 
+        byte_index = 0
         for byte in message_bytes:
             byte_index += 1
             if byte == 0xF2 or byte == 0xE6:
@@ -53,10 +55,14 @@ class ArchiveScript:
                     message_box.append(byte)
                     self.messageBoxes.append(message_box)
                 else:  # It's the end of the script, add another message to end it after this one
-                    self.messageBoxes.append(message_box)
-                    self.messageBoxes.append([0xE6])
+                    if len(message_box) >= 2 and (message_box[-2] == 0xFA or message_box[-2] == 0xF4):
+                        message_box.append(byte)
+                    else:
+                        self.messageBoxes.append(message_box)
+                        self.messageBoxes.append([0xE6])
 
-                message_box = []
+                if not(len(message_box) >= 3 and (message_box[-3] == 0xFA or message_box[-3] == 0xF4)):
+                    message_box = []
 
             else:
                 message_box.append(byte)
@@ -201,7 +207,10 @@ class LocalRom:
             if item.type == ItemType.External:
                 self.rom_data = update_mystery_data_external(self.rom_data, offset)
             else:
-                self.rom_data = update_mystery_data(self.rom_data, offset, item.type, item.itemId, item.subItemId, item.count)
+                self.rom_data = update_mystery_data(self.rom_data, offset, item.type, item.itemID, item.subItemID, item.count)
+        elif location.type == LocationType.Boss:
+            # Nothing to change in the ROM, do nothing
+            return
         else:
             # If the archive is already loaded, use that
             if offset in self.changed_archives:
@@ -222,7 +231,6 @@ class LocalRom:
                     size = read_u16_le(new_size_bytes, 0)
                     data = self.get_data_chunk(read_u32_le(new_address_le, 0), size)
 
-
                 archive = TextArchive(data, offset, size, is_compressed)
                 self.changed_archives[offset] = archive
 
@@ -242,7 +250,7 @@ class LocalRom:
 
         # Replace item name placeholders
         if location.inject_name:
-            offset = location.text_archive_address
+            offset = location.update_address
             # If the archive is already loaded, use that
             if offset in self.changed_archives:
                 archive = self.changed_archives[offset]
@@ -278,15 +286,16 @@ class MMBN6DeltaPatch(APDeltaPatch):
 
 
 def get_base_rom_path(file_name: str = "") -> str:
-    options = Utils.get_options()
     if not file_name:
-        bn6_options = options.get("mmbn6_options", None)
+        from worlds.mmbn6g import MMBN6World
+        bn6_options = MMBN6World.settings
+
         if bn6_options is None:
-            file_name = "Mega Man Battle Network 6 - Cybeast Gregar.gba"
+            file_name = "Mega Man Battle Network 6 - Cybeast Gregar (USA).gba"
         else:
             file_name = bn6_options["rom_file"]
     if not os.path.exists(file_name):
-        file_name = Utils.local_path(file_name)
+        file_name = Utils.user_path(file_name)
     return file_name
 
 

@@ -125,8 +125,8 @@ def generate_zenny_get(amt) -> bytearray:
     return bytearray(byte_list)
 
 def generate_program_get(program, color, amt) -> bytearray:
-    # Programs are bit shifted twice to generate the "give" bit
-    byte_list = [0xEF, 0x1B, program, color, amt]
+    # Programs are bit shifted twice to generate the "give" bit, essentially multiplying by 4
+    byte_list = [0xEF, 0x1B, program << 2, amt, color]
     byte_list.extend(generate_text_bytes("Got a Navi\nCustomizer Program:\n\""))
     byte_list.extend([0xFA, 0x00, program, 0x05])
     return bytearray(byte_list)
@@ -154,12 +154,14 @@ def generate_get_for_item(item) -> bytearray:
     return generate_text_bytes("Empty Message")
 
 def generate_item_message(item_data) -> bytearray:
-    byte_list = [0xF8, 0x04, 0x18]  # Play Animation
-    byte_list.extend([0xED, 0x01])  # Hide Mugshot
+    byte_list = [0xF5, 0x01]  # Hide Mugshot
+    byte_list.extend([0xF8, 0x05, 0x18])  # Play Animation
     byte_list.extend(generate_get_for_item(item_data))
-    byte_list.extend([0xF8, 0x0C])
-    byte_list.extend([0xEB, 0xE9, 0xF8, 0x08])
-    byte_list.extend([0xF8, 0x10])
+    byte_list.extend([0xF8, 0x03]) # Player Finish
+    byte_list.extend([0xF8, 0x04]) # PlayerResetScene
+    byte_list.extend([0xF8, 0x06]) # PlayerResetObject
+    byte_list.extend([0xE7, 0x00]) # keyWait = false
+    byte_list.extend([0xF2]) # clearMsg
     return bytearray(byte_list)
 
 # Unfortunately, since mystery data are not handled through text archives normally, we
@@ -167,25 +169,25 @@ def generate_item_message(item_data) -> bytearray:
 def generate_external_item_message(item_name, item_recipient) -> bytearray:
     byte_list = [0xF4, 0x00, 0x37, 0x1]
     byte_list.extend(generate_text_bytes("Got a \n\""))
-    byte_list.extend([0xFA, 0x00, 0x37, 0x00])
+    byte_list.extend([0xFA, 0x00, 0x3D, 0x00])
     byte_list.extend(generate_text_bytes("\"!!"))
     return bytearray(byte_list)
 
-def update_mystery_data(rom_data, offset, type, itemId, subItemId, count) -> bytearray:
+def update_mystery_data(rom_data, offset, type, itemID, subItemID, count) -> bytearray:
     # Reference to the Mystery Data structure: https://forums.therockmanexezone.com/bn4-6-sf1-mystery-data-wave-structure-t5398.html
     # The update address for Mystery Data is the Contents Entry. All we need to update is the type (0x00), the item sub-value (0x03), and the item value (0x04)
-    if (type = ItemType.KeyItem):
+    if (type == ItemType.KeyItem):
         # Set the type
-        if (itemId = 112):
+        if (itemID == 112):
             # Item = HPMemory
             rom_data[offset] = 0x08
-        else if (itemId = 114 or itemId = 115 or itemId = 116):
+        elif (itemID == 114 or itemID == 115 or itemID == 116):
             # Item = RegUp1, RegUp2, RegUp3
             rom_data[offset] = 0x0A
-        if (itemId = 117):
+        if (itemID == 117):
             # Item = SubMemry
             rom_data[offset] = 0x0B
-        if (itemId = 113):
+        if (itemID == 113):
             # Item = ExpMemry
             rom_data[offset] = 0x0C
         else:
@@ -194,42 +196,66 @@ def update_mystery_data(rom_data, offset, type, itemId, subItemId, count) -> byt
         # Set the sub-value. Since we don't need one, use 0xFF
         rom_data[offset + 0x03] = 0xFF
         # Set the item value
-        rom_data[offset + 0x04] = itemId
-    else if (type = ItemType.Chip):
+        bytes = int32_to_byte_list_le(itemID)
+        rom_data[offset + 0x04] = bytes[0]
+        rom_data[offset + 0x05] = bytes[1]
+        rom_data[offset + 0x06] = bytes[2]
+        rom_data[offset + 0x07] = bytes[3]
+    elif (type == ItemType.Chip):
         # Set the type
         rom_data[offset] = 0x01
         # Set the sub-value.
-        rom_data[offset + 0x03] = subItemId
+        rom_data[offset + 0x03] = subItemID
         # Set the item value
-        rom_data[offset + 0x04] = itemId
-    else if (type = ItemType.SubChip):
+        bytes = int32_to_byte_list_le(itemID)
+        rom_data[offset + 0x04] = bytes[0]
+        rom_data[offset + 0x05] = bytes[1]
+        rom_data[offset + 0x06] = bytes[2]
+        rom_data[offset + 0x07] = bytes[3]
+    elif (type == ItemType.SubChip):
         # Set the type
         rom_data[offset] = 0x02
         # Set the sub-value. Since we don't need one, use 0xFF
         rom_data[offset + 0x03] = 0xFF
         # Set the item value
-        rom_data[offset + 0x04] = itemId
-    else if (type = ItemType.Zenny):
+        bytes = int32_to_byte_list_le(itemID)
+        rom_data[offset + 0x04] = bytes[0]
+        rom_data[offset + 0x05] = bytes[1]
+        rom_data[offset + 0x06] = bytes[2]
+        rom_data[offset + 0x07] = bytes[3]
+    elif (type == ItemType.Zenny):
         # Set the type
         rom_data[offset] = 0x03
         # Set the sub-value. Since we don't need one, use 0xFF
         rom_data[offset + 0x03] = 0xFF
         # Set the item value. For Zenny, that's the amount
-        rom_data[offset + 0x04] = count
-    else if (type = ItemType.BugFrag):
+        bytes = int32_to_byte_list_le(count)
+        rom_data[offset + 0x04] = bytes[0]
+        rom_data[offset + 0x05] = bytes[1]
+        rom_data[offset + 0x06] = bytes[2]
+        rom_data[offset + 0x07] = bytes[3]
+    elif (type == ItemType.BugFrag):
         # Set the type
         rom_data[offset] = 0x05
         # Set the sub-value. Since we don't need one, use 0xFF
         rom_data[offset + 0x03] = 0xFF
         # Set the item value. For BugFrags, that's the amount
-        rom_data[offset + 0x04] = count
-    else if (type = ItemType.Program):
+        bytes = int32_to_byte_list_le(count)
+        rom_data[offset + 0x04] = bytes[0]
+        rom_data[offset + 0x05] = bytes[1]
+        rom_data[offset + 0x06] = bytes[2]
+        rom_data[offset + 0x07] = bytes[3]
+    elif (type == ItemType.Program):
         # Set the type
         rom_data[offset] = 0x09
         # Set the sub-value.
-        rom_data[offset + 0x03] = subItemId
-        # Set the item value.
-        rom_data[offset + 0x04] = itemId
+        rom_data[offset + 0x03] = subItemID
+        # Set the item value. For programs, multiply the programID by 4 and add 144
+        bytes = int32_to_byte_list_le(144 + (itemID * 4))
+        rom_data[offset + 0x04] = bytes[0]
+        rom_data[offset + 0x05] = bytes[1]
+        rom_data[offset + 0x06] = bytes[2]
+        rom_data[offset + 0x07] = bytes[3]
 
     return rom_data
 
@@ -239,7 +265,7 @@ def update_mystery_data_external(rom_data, offset) -> bytearray:
     rom_data[offset] = 0x04
     # Set the sub-value. Since we don't need one, use 0xFF
     rom_data[offset + 0x03] = 0xFF
-    # Set the item value. For external items, use item ID 55.
-    rom_data[offset + 0x04] = 0x37
+    # Set the item value. For external items, use item ID 61.
+    rom_data[offset + 0x04] = 0x3D
 
     return rom_data

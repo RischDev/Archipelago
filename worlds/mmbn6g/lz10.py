@@ -17,7 +17,7 @@ def gba_decompress(data: bytearray):
     if header[0] == 0x10:
         decompress_raw = decompress_raw_lzss10
     else:
-        raise DecompressionError("not as lzss-compressed file")
+        raise DecompressionError("not an lzss-compressed file")
 
     decompressed_size, = unpack("<L", header[1:] + b'\x00')
 
