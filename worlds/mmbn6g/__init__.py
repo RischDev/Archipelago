@@ -1,73 +1,79 @@
 import os
 import settings
 import typing
-import threading
 
-from BaseClasses import Item, MultiWorld, Tutorial, ItemClassification, Region, Entrance, \
+from BaseClasses import Item, MultiWorld, Tutorial, ItemClassification, Region, \
     LocationProgressType
 
 from worlds.AutoWorld import WebWorld, World
 
-from .Rom import MMBN3DeltaPatch, LocalRom, get_base_rom_path
-from .Items import MMBN3Item, ItemData, item_table, all_items, item_frequencies, items_by_id, ItemType, item_groups
-from .Locations import Location, MMBN3Location, all_locations, location_table, location_data_table, \
-    secret_locations, jobs, location_groups
-from .Options import MMBN3Options
+from .Rom import MMBN6DeltaPatch, LocalRom, get_base_rom_path
+from .Items import MMBN6Item, ItemData, item_table, all_items, item_frequencies, items_by_id, ItemType, item_groups
+from .Locations import MMBN6Location, all_locations, location_table, location_data_table, \
+    requests, location_groups
+from .Options import MMBN6Options
 from .Regions import regions, RegionName
 from .Names.ItemName import ItemName
 from .Names.LocationName import LocationName
-from worlds.generic.Rules import add_item_rule, add_rule
+from .Client import MMBN6Client
+from worlds.generic.Rules import add_rule
 
 
-class MMBN3Settings(settings.Group):
+class MMBN6Settings(settings.Group):
     class RomFile(settings.UserFilePath):
-        """File name of the MMBN3 Blue US rom"""
-        copy_to = "Mega Man Battle Network 3 - Blue Version (USA).gba"
-        description = "MMBN3 ROM File"
-        md5s = [MMBN3DeltaPatch.hash]
+        """File name of the MMBN6 Cybeast Gregar US rom"""
+        copy_to = "Mega Man Battle Network 6 - Cybeast Gregar.gba"
+        description = "MMBN6 ROM File"
+        md5s = [MMBN6DeltaPatch.hash]
+
+    class RomStart(str):
+        """
+        Set this to false to never autostart a rom (such as after patching),
+                    true  for operating system default program
+        Alternatively, a path to a program to open the .gba file with
+        """
 
     rom_file: RomFile = RomFile(RomFile.copy_to)
-    rom_start: bool = True
+    rom_start: RomStart | bool = True
 
 
-class MMBN3Web(WebWorld):
+class MMBN6Web(WebWorld):
     theme = "ice"
 
     setup_en = Tutorial(
         "Multiworld Setup Guide",
-        "A guide to setting up the MegaMan Battle Network 3 Randomizer connected to an Archipelago Multiworld.",
+        "A guide to setting up the MegaMan Battle Network 6 Randomizer connected to an Archipelago Multiworld.",
         "English",
         "setup_en.md",
         "setup/en",
-        ["digiholic"]
+        ["Risch"]
     )
     tutorials = [setup_en]
 
 
-class MMBN3World(World):
+class MMBN6World(World):
     """
     Play as Lan and MegaMan to stop the evil organization WWW led by the nefarious
     Dr. Wily in their plans to take over the Net! Collect BattleChips, Customize your Navi,
-    and utilize powerful Style Changes to grow strong enough to take on the greatest
-    threat the Internet has ever faced!
+    and utilize powerful Cross transformations to grow strong enough to take on the greatest
+    threat the Internet has ever faced (once again)!
     """
-    game = "MegaMan Battle Network 3"
-    options_dataclass = MMBN3Options
-    options: MMBN3Options
-    settings: typing.ClassVar[MMBN3Settings]
+    game = "MegaMan Battle Network 6"
+    options_dataclass = MMBN6Options
+    options: MMBN6Options
+    settings: typing.ClassVar[MMBN6Settings]
     topology_present = False
-
 
     item_name_to_id = {name: data.code for name, data in item_table.items()}
     location_name_to_id = {loc_data.name: loc_data.id for loc_data in all_locations}
-    
+
     excluded_locations: typing.Set[str]
     item_frequencies: typing.Dict[str, int]
 
     location_name_groups = location_groups
     item_name_groups = item_groups
 
-    web = MMBN3Web()
+    web = MMBN6Web()
 
     def generate_early(self) -> None:
         """
@@ -75,14 +81,10 @@ class MMBN3World(World):
         Already has access to player options and RNG.
         """
         self.item_frequencies = item_frequencies.copy()
-        if self.options.extra_ranks > 0:
-            self.item_frequencies[ItemName.Progressive_Undernet_Rank] = 8 + self.options.extra_ranks
 
         self.excluded_locations = set()
-        if not self.options.include_secret:
-            self.excluded_locations |= secret_locations
         if not self.options.include_jobs:
-            self.excluded_locations |= {job.name for job in jobs}
+            self.excluded_locations |= {request.name for request in requests}
 
     def create_regions(self) -> None:
         """
@@ -94,27 +96,25 @@ class MMBN3World(World):
             region = Region(region_info.name, self.player, self.multiworld)
             name_to_region[region_info.name] = region
             for location in region_info.locations:
-                loc = MMBN3Location(self.player, location, self.location_name_to_id.get(location, None), region)
+                loc = MMBN6Location(self.player, location, self.location_name_to_id.get(location, None), region)
                 if location in self.excluded_locations:
                     loc.progress_type = LocationProgressType.EXCLUDED
-                # Do not place any progression items on WWW Island
-                if region_info.name == RegionName.WWW_Island:
-                    add_item_rule(loc, lambda item: not item.advancement)
                 region.locations.append(loc)
             self.multiworld.regions.append(region)
 
         # Regions which contribute to explore score when accessible.
         explore_score_region_names = (
-            RegionName.WWW_Island,
-            RegionName.SciLab_Overworld,
-            RegionName.SciLab_Cyberworld,
-            RegionName.Yoka_Overworld,
-            RegionName.Yoka_Cyberworld,
-            RegionName.Beach_Overworld,
-            RegionName.Beach_Cyberworld,
+            RegionName.Seaside_Overworld,
+            RegionName.Seaside_Cyberworld,
+            RegionName.Green_Overworld,
+            RegionName.Green_Cyberworld,
+            RegionName.Sky_Overworld,
+            RegionName.Sky_Cyberworld,
+            RegionName.ACDC_Overworld,
+            RegionName.ACDC_Cyberworld,
             RegionName.Undernet,
-            RegionName.Deep_Undernet,
-            RegionName.Secret_Area,
+            RegionName.Graveyard,
+            RegionName.Expo
         )
         explore_score_regions = [self.get_region(region_name) for region_name in explore_score_region_names]
 
@@ -129,47 +129,66 @@ class MMBN3World(World):
             for connection in region_info.connections:
                 entrance = region.connect(name_to_region[connection])
 
-                # ACDC Pending with Start Randomizer
-                # if connection == RegionName.ACDC_Overworld:
-                #     entrance.access_rule = lambda state: state.has(ItemName.Parasol, self.player)
-                if connection == RegionName.SciLab_Overworld:
-                    entrance.access_rule = lambda state: state.has(ItemName.SubPET, self.player)
-                if connection == RegionName.Yoka_Overworld:
-                    entrance.access_rule = lambda state: state.has(ItemName.Needle, self.player)
-                if connection == RegionName.Beach_Overworld:
-                    entrance.access_rule = lambda state: state.has(ItemName.PETCase, self.player)
+                # Overworld Regions
+                if connection == RegionName.Seaside_Overworld:
+                    entrance.access_rule = lambda state: state.has(ItemName.Fish, self.player)
+                if connection == RegionName.Green_Overworld:
+                    entrance.access_rule = lambda state: state.has(ItemName.AuthData, self.player)
+                if connection == RegionName.Sky_Overworld:
+                    entrance.access_rule = lambda state: state.has(ItemName.Umbrella, self.player)
+                if connection == RegionName.ACDC_Overworld:
+                    entrance.access_rule = lambda state: state.has(ItemName.ACDCKyDt, self.player)
 
-                # ACDC Pending with Start Randomizer
-                # if connection == RegionName.ACDC_Cyberworld:
-                #     entrance.access_rule = lambda state: state.has(ItemName.CACDCPas, self.player)
-                if connection == RegionName.SciLab_Cyberworld:
+                # Cyberworld Regions
+                # Central 3 can be reached from Central 1 with KeyData, or any cyberworld with the proper key item
+                if connection == RegionName.Central3_and_Underground:
                     entrance.access_rule = lambda state: \
-                        state.has(ItemName.CSciPas, self.player) or \
-                        state.can_reach_region(RegionName.SciLab_Overworld, self.player)
-                    self.multiworld.register_indirect_condition(self.get_region(RegionName.SciLab_Overworld), entrance)
-                if connection == RegionName.Yoka_Cyberworld:
+                        state.has(ItemName.KeyData, self.player) or \
+                        (state.can_reach_region(RegionName.Seaside_Cyberworld, self.player) and \
+                         state.has(ItemName.ToolPrgm, self.player)) or \
+                        (state.can_reach_region(RegionName.Green_Cyberworld, self.player) and \
+                         state.has(ItemName.CybBrdAx, self.player)) or \
+                        (state.can_reach_region(RegionName.Sky_Cyberworld, self.player) and \
+                         state.has(ItemName.VacData, self.player)) or \
+                        (state.can_reach_region(RegionName.ACDC_Cyberworld, self.player) and \
+                         state.has(ItemName.AreaPass, self.player)) or \
+                        self.multiworld.register_indirect_condition(self.get_region(RegionName.Seaside_Cyberworld),
+                                                                    entrance)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Green_Cyberworld), entrance)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Sky_Cyberworld), entrance)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.ACDC_Cyberworld), entrance)
+                if connection == RegionName.Seaside_Cyberworld:
                     entrance.access_rule = lambda state: \
-                        state.has(ItemName.CYokaPas, self.player) or \
-                        (
-                            state.can_reach_region(RegionName.SciLab_Overworld, self.player) and
-                            state.has(ItemName.Press, self.player)
-                        )
-                    self.multiworld.register_indirect_condition(self.get_region(RegionName.SciLab_Overworld), entrance)
-                if connection == RegionName.Beach_Cyberworld:
-                    entrance.access_rule = lambda state: state.has(ItemName.CBeacPas, self.player) and\
-                        state.can_reach_region(RegionName.Yoka_Overworld, self.player)
-                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Yoka_Overworld), entrance)
+                        state.has(ItemName.ToolPrgm, self.player) or \
+                        state.can_reach_region(RegionName.Seaside_Overworld, self.player)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Seaside_Overworld), entrance)
+                if connection == RegionName.Green_Cyberworld:
+                    entrance.access_rule = lambda state: \
+                        state.has(ItemName.CybBrdAx, self.player) or \
+                        state.can_reach_region(RegionName.Green_Overworld, self.player)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Green_Overworld), entrance)
+                if connection == RegionName.Sky_Cyberworld:
+                    entrance.access_rule = lambda state: \
+                        state.has(ItemName.VacData, self.player) or \
+                        state.can_reach_region(RegionName.Sky_Overworld, self.player)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Sky_Overworld), entrance)
+                if connection == RegionName.ACDC_Cyberworld:
+                    entrance.access_rule = lambda state: \
+                        state.has(ItemName.AreaPass, self.player) or \
+                        state.can_reach_region(RegionName.ACDC_Overworld, self.player)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.ACDC_Overworld), entrance)
                 if connection == RegionName.Undernet:
-                    entrance.access_rule = lambda state: self.explore_score(state) > 8 and\
-                        state.has(ItemName.Press, self.player)
-                    register_explore_score_indirect_conditions(entrance)
-                if connection == RegionName.Secret_Area:
-                    entrance.access_rule = lambda state: self.explore_score(state) > 12 and\
-                        state.has(ItemName.Hammer, self.player)
-                    register_explore_score_indirect_conditions(entrance)
-                if connection == RegionName.WWW_Island:
-                    entrance.access_rule = lambda state:\
-                        state.has(ItemName.Progressive_Undernet_Rank, self.player, 8)
+                    entrance.access_rule = lambda state: self.explore_score(state) > 6 and \
+                                                         state.can_reach_region(RegionName.Sky_Cyberworld, self.player)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Sky_Cyberworld), entrance)
+                if connection == RegionName.Graveyard:
+                    entrance.access_rule = lambda state: self.explore_score(state) > 9 and \
+                                                         state.can_reach_region(RegionName.Undernet, self.player) and \
+                                                         state.has(ItemName.BatKey, self.player)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Undernet), entrance)
+                if connection == RegionName.Expo:
+                    entrance.access_rule = lambda state: \
+                        state.has(ItemName.StampCrd, self.player)
 
     def create_items(self) -> None:
         # First add in all progression and useful items
@@ -202,235 +221,469 @@ class MMBN3World(World):
         """
 
         # Set WWW ID requirements
-        def has_www_id(state): return state.has(ItemName.WWW_ID, self.player)
-        add_rule(self.multiworld.get_location(LocationName.ACDC_1_PMD, self.player), has_www_id)
-        add_rule(self.multiworld.get_location(LocationName.SciLab_1_WWW_BMD, self.player), has_www_id)
-        add_rule(self.multiworld.get_location(LocationName.Yoka_1_WWW_BMD, self.player), has_www_id)
-        add_rule(self.multiworld.get_location(LocationName.Undernet_1_WWW_BMD, self.player), has_www_id)
+        def has_www_id(state):
+            return state.has(ItemName.WWWID, self.player)
 
-        # Set Press Program requirements
-        def has_press(state): return state.has(ItemName.Press, self.player)
-        add_rule(self.multiworld.get_location(LocationName.Yoka_1_PMD, self.player), has_press)
-        add_rule(self.multiworld.get_location(LocationName.Yoka_2_Upper_BMD, self.player), has_press)
-        add_rule(self.multiworld.get_location(LocationName.Beach_2_East_BMD, self.player), has_press)
-        add_rule(self.multiworld.get_location(LocationName.Hades_South_BMD, self.player), has_press)
-        add_rule(self.multiworld.get_location(LocationName.Secret_3_BugFrag_BMD, self.player), has_press)
-        add_rule(self.multiworld.get_location(LocationName.Secret_3_Island_BMD, self.player), has_press)
+        add_rule(self.multiworld.get_location(LocationName.Central_Area_1_BMD_2, self.player), has_www_id)
+        add_rule(self.multiworld.get_location(LocationName.Seaside_Area_1_BMD_2, self.player), has_www_id)
+        add_rule(self.multiworld.get_location(LocationName.Green_Area_2_BMD_3, self.player), has_www_id)
+        add_rule(self.multiworld.get_location(LocationName.ACDC_Area_BMD_2, self.player), has_www_id)
 
-        # Set Purple Mystery Data Unlocker access
-        def can_unlock(state): return state.can_reach_region(RegionName.SciLab_Overworld, self.player) or \
-            state.can_reach_region(RegionName.SciLab_Cyberworld, self.player) or \
-            state.can_reach_region(RegionName.Yoka_Cyberworld, self.player) or \
-            state.has(ItemName.Unlocker, self.player, 8) # There are 8 PMDs that aren't in one of the above areas
-        add_rule(self.multiworld.get_location(LocationName.ACDC_1_PMD, self.player), can_unlock)
-        add_rule(self.multiworld.get_location(LocationName.Yoka_1_PMD, self.player), can_unlock)
-        add_rule(self.multiworld.get_location(LocationName.Beach_1_PMD, self.player), can_unlock)
-        add_rule(self.multiworld.get_location(LocationName.Undernet_7_PMD, self.player), can_unlock)
-        add_rule(self.multiworld.get_location(LocationName.Mayls_HP_PMD, self.player), can_unlock)
-        add_rule(self.multiworld.get_location(LocationName.SciLab_Dads_Computer_PMD, self.player), can_unlock)
-        add_rule(self.multiworld.get_location(LocationName.Zoo_Panda_PMD, self.player), can_unlock)
-        add_rule(self.multiworld.get_location(LocationName.Beach_DNN_Security_Panel_PMD, self.player), can_unlock)
-        add_rule(self.multiworld.get_location(LocationName.Beach_DNN_Main_Console_PMD, self.player), can_unlock)
-        add_rule(self.multiworld.get_location(LocationName.Tamakos_HP_PMD, self.player), can_unlock)
+        # Set Rush Food requirements. For now, this just requires Sky Town access
+        def has_press(state):
+            return state.has(ItemName.Umbrella, self.player)
+
+        add_rule(self.multiworld.get_location(LocationName.Green_Area_2_BMD_2, self.player), has_press)
+        add_rule(self.multiworld.get_location(LocationName.Sky_Area_1_BMD_2, self.player), has_press)
+        add_rule(self.multiworld.get_location(LocationName.ACDC_Area_BMD_1, self.player), has_press)
+        add_rule(self.multiworld.get_location(LocationName.Undernet_0_Heel_Navi, self.player), has_press)
+
+        # Rush Food requirement, but also blocked by a Tree
+        self.multiworld.get_location(LocationName.Undernet_Zero_BMD_1, self.player).access_rule = \
+            lambda state: \
+                state.has(ItemName.Umbrella, self.player) and \
+                (state.has(ItemName.HeatCross, self.player) or \
+                 state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
+
+        # Set Link Navi requirements
+        # Fires
+        self.multiworld.get_location(LocationName.Sky_Area_2_BMD_3, self.player).access_rule = \
+            lambda state: \
+                (state.has(ItemName.HeatCross, self.player) or \
+                 state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
+        self.multiworld.get_location(LocationName.Underground_2_BMD_2, self.player).access_rule = \
+            lambda state: \
+                (state.has(ItemName.HeatCross, self.player) or \
+                 state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
+        self.multiworld.get_location(LocationName.Graveyard_BMD_2, self.player).access_rule = \
+            lambda state: \
+                (state.has(ItemName.HeatCross, self.player) or \
+                 state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
+
+        # Geysers
+        self.multiworld.get_location(LocationName.Seaside_Area_1_BMD_3, self.player).access_rule = \
+            lambda state: \
+                (state.has(ItemName.EraseCross, self.player) or \
+                 state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
+        self.multiworld.get_location(LocationName.Undernet_Zero_BMD_2, self.player).access_rule = \
+            lambda state: \
+                (state.has(ItemName.EraseCross, self.player) or \
+                 state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
+        self.multiworld.get_location(LocationName.Graveyard_PMD_1, self.player).access_rule = \
+            lambda state: \
+                (state.has(ItemName.EraseCross, self.player) or \
+                 state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
+
+        # Trees
+        self.multiworld.get_location(LocationName.Green_Area_1_BMD_2, self.player).access_rule = \
+            lambda state: \
+                (state.has(ItemName.HeatCross, self.player) or \
+                 state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
+        self.multiworld.get_location(LocationName.Sky_1_Brown_Navi, self.player).access_rule = \
+            lambda state: \
+                (state.has(ItemName.HeatCross, self.player) or \
+                 state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
+        self.multiworld.get_location(LocationName.Graveyard_BMD_3, self.player).access_rule = \
+            lambda state: \
+                (state.has(ItemName.HeatCross, self.player) or \
+                 state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
+
+        # Cloud
+        self.multiworld.get_location(LocationName.Sky_Area_1_PMD, self.player).access_rule = \
+            lambda state: \
+                (state.has(ItemName.EraseCross, self.player) or \
+                 state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
+
+        # Tornado
+        self.multiworld.get_location(LocationName.Seaside_Area_2_BMD_3, self.player).access_rule = \
+            lambda state: \
+                (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or \
+                 state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
+        self.multiworld.get_location(LocationName.Sky_Area_1_PMD, self.player).access_rule = \
+            lambda state: \
+                (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or \
+                 state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
+        self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
+            lambda state: \
+                (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or \
+                 state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
+
+        # Lab Comp 2 requires EraseCross, or access to Undernet
+        self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
+            lambda state: \
+                state.has(ItemName.EraseCross, self.player) or \
+                state.can_reach_region(RegionName.Undernet, self.player)
+
+        # Set Purple Mystery Data Unlocker access. Since Central has a SubChip shop with Unlockers, this is unneeded for now.
+        # def can_unlock(state): return state.has(ItemName.Unlocker, self.player, 8) # There are 8 PMDs that aren't in one of the above areas
+
+        # Get the player's current possible request points based on accessible locations. This determines if a certain rank
+        # is achievable to unlock higher star requests.
+        def request_points_possible(state):
+            # 1 star jobs
+            # Virus Deletion and Find Keepsake always reachable
+            request_points = 2
+
+            # If Got a Problem. beatable
+            if state.can_reach_region(RegionName.Seaside_Overworld, self.player):
+                request_points += 1
+
+            # If Errand Request and Get The Chip! beatable
+            if state.can_reach_region(RegionName.Seaside_Cyberworld, self.player):
+                # Get The Chip! requires DolThdr1 A
+                if state.has(ItemName.DolThdr1_A, self.player):
+                    request_points += 1
+                # Loan Collection starts in Green HP
+                if state.can_reach_region(RegionName.Green_Cyberworld, self.player):
+                    request_points += 1
+
+                request_points += 1
+
+            # For Somebody Help!, we force the 10,000z option. To prevent heavy grinding, require Millions or
+            # a 100,000z drop
+            if state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player):
+                request_points += 1
+
+            # If Daughter Worry, Stop Him!, and Diet Goods Money beatable
+            if state.can_reach_region(RegionName.Green_Overworld, self.player):
+                # Daughter Worry and Diet Goods Money require Seaside Cyberworld access
+                if state.can_reach_region(RegionName.Seaside_Cyberworld, self.player):
+                    request_points += 2
+
+                request_points += 1
+
+            # If Songwriter beatable
+            if state.can_reach_region(RegionName.Sky_Cyberworld, self.player):
+                request_points += 1
+
+            # If not Rank B, then can't do more requests
+            if request_points < 10:
+                return request_points
+
+            # 2 star jobs
+            # Juvenile Division always beatable. We also cannot get this far without Green Overworld and Seaside Cyberworld
+            # access, so Stand In Recruit and Lumber Merchant are always beatable too
+            request_points += 6
+
+            # If For Victory! beatable
+            if state.has(ItemName.GunDelS1_C, self.player):
+                request_points += 2
+
+            # If Stock Up!, Penguins Ran Away, Update Help, and Do Something! beatable
+            # Note: Do Something! requires fire damage, but for simplicity, we just assume you can get those in Robo Control
+            if state.can_reach_region(RegionName.Seaside_Overworld, self.player):
+                request_points += 8
+
+            # If Buy Which Stock? and Want to Meet Daughter beatable
+            if state.can_reach_region(RegionName.Sky_Cyberworld, self.player):
+                request_points += 4
+
+            # If Not Enough Member beatable
+            if state.has_all({ItemName.Fanfare_Z, ItemName.Discord_S, ItemName.Timpani_T}, self.player):
+                request_points += 2
+
+            # If Self Research beatable. Assumed you get PoisSeed P, and have OrderSys to buy second one.
+            if state.has_all({ItemName.PoisSeed_P, ItemName.OrderSys, ItemName.Anubis_P}, self.player):
+                request_points += 2
+
+            # If not Rank B, then can't do more requests
+            if request_points < 25:
+                return request_points
+
+            # 3 star jobs
+            # We cannot get this far without Green Overworld and Seaside Cyberworld access, so Time Capsule and
+            # Road to Soul Battler always beatable
+            request_points += 6
+
+            # If Find the Virus!, Can't Open Safe, Track the Criminal, and An Experiment! are beatable
+            if state.can_reach_region(RegionName.Seaside_Overworld, self.player):
+                request_points += 12
+
+            # If Get the Bad Guy is beatable
+            if state.has(ItemName.KeyData, self.player):
+                request_points += 3
+
+            # If Official Request beatable
+            if state.can_reach_region(RegionName.Sky_Overworld, self.player):
+                request_points += 3
+
+            # At this point, if we have over 35 request points, all requests are available
+            return request_points
 
         # Set Job additional area access
-        self.multiworld.get_location(LocationName.Please_deliver_this, self.player).access_rule = \
+        self.multiworld.get_location(LocationName.Errand_Request, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.ACDC_Overworld, self.player) and \
-                state.can_reach_region(RegionName.ACDC_Cyberworld, self.player)
-        self.multiworld.get_location(LocationName.My_Navi_is_sick, self.player).access_rule =\
+                state.can_reach_region(RegionName.Seaside_Cyberworld, self.player)
+        self.multiworld.get_location(LocationName.For_Victory, self.player).access_rule = \
             lambda state: \
-                state.has(ItemName.Recov30_star, self.player)
-        self.multiworld.get_location(LocationName.Help_me_with_my_son, self.player).access_rule =\
-            lambda state:\
-                state.can_reach_region(RegionName.Yoka_Overworld, self.player) and \
-                state.can_reach_region(RegionName.ACDC_Cyberworld, self.player)
-        self.multiworld.get_location(LocationName.Transmission_error, self.player).access_rule = \
+                state.has(ItemName.GunDelS1_C, self.player) and \
+                request_points_possible(state) >= 10
+        self.multiworld.get_location(LocationName.JuvenileDiv, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Yoka_Overworld, self.player)
-        self.multiworld.get_location(LocationName.Chip_Prices, self.player).access_rule = \
+                request_points_possible(state) >= 10
+        # For Somebody Help!, we force the 10,000z option. To prevent heavy grinding, require Millions
+        self.multiworld.get_location(LocationName.Somebody_Help, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.ACDC_Cyberworld, self.player) and \
-                state.can_reach_region(RegionName.SciLab_Cyberworld, self.player)
-        self.multiworld.get_location(LocationName.Im_broke, self.player).access_rule = \
+                state.has(ItemName.Millions, self.player)
+        self.multiworld.get_location(LocationName.Get_The_Chip, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Yoka_Overworld, self.player) and \
-                state.can_reach_region(RegionName.Yoka_Cyberworld, self.player)
-        self.multiworld.get_location(LocationName.Rare_chips_for_cheap, self.player).access_rule = \
+                state.has(ItemName.DolThdr1_A, self.player)
+        self.multiworld.get_location(LocationName.Stock_Up, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.ACDC_Overworld, self.player)
-        self.multiworld.get_location(LocationName.Be_my_boyfriend, self.player).access_rule =\
+                request_points_possible(state) >= 10
+        self.multiworld.get_location(LocationName.StandIn_Recruit, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Beach_Cyberworld, self.player)
-        self.multiworld.get_location(LocationName.Will_you_deliver, self.player).access_rule=\
+                request_points_possible(state) >= 10
+        self.multiworld.get_location(LocationName.PenguinsRanAway, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Yoka_Overworld, self.player) and \
-                state.can_reach_region(RegionName.Beach_Overworld, self.player) and \
-                state.can_reach_region(RegionName.ACDC_Cyberworld, self.player)
-        self.multiworld.get_location(LocationName.Somebody_please_help, self.player).access_rule = \
+                request_points_possible(state) >= 10
+        self.multiworld.get_location(LocationName.Daughter_Worry, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.ACDC_Overworld, self.player)
-        self.multiworld.get_location(LocationName.Looking_for_condor, self.player).access_rule = \
+                state.can_reach_region(RegionName.Seaside_Cyberworld, self.player)
+        self.multiworld.get_location(LocationName.Loan_Collection, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Yoka_Overworld, self.player) and \
-                state.can_reach_region(RegionName.Beach_Overworld, self.player) and \
-                state.can_reach_region(RegionName.ACDC_Overworld, self.player)
-        self.multiworld.get_location(LocationName.Help_with_rehab, self.player).access_rule = \
+                state.can_reach_region(RegionName.Seaside_Cyberworld, self.player)
+        self.multiworld.get_location(LocationName.Lumber_Merchant, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Beach_Overworld, self.player)
-        self.multiworld.get_location(LocationName.Old_Master, self.player).access_rule = \
+                state.can_reach_region(RegionName.Seaside_Cyberworld, self.player) and \
+                request_points_possible(state) >= 10
+        self.multiworld.get_location(LocationName.TimeCpsl, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.ACDC_Overworld, self.player) and \
-                state.can_reach_region(RegionName.Beach_Overworld, self.player)
-        self.multiworld.get_location(LocationName.Catching_gang_members, self.player).access_rule = \
+                request_points_possible(state) >= 25
+        self.multiworld.get_location(LocationName.DietGood_Money, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Yoka_Cyberworld, self.player) and \
-                state.has(ItemName.Press, self.player)
-        self.multiworld.get_location(LocationName.Please_adopt_a_virus, self.player).access_rule = \
+                state.can_reach_region(RegionName.Seaside_Cyberworld, self.player) and \
+                state.can_reach_region(RegionName.Green_Overworld, self.player)
+        self.multiworld.get_location(LocationName.Find_The_Virus, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.SciLab_Cyberworld, self.player)
-        self.multiworld.get_location(LocationName.Legendary_Tomes, self.player).access_rule = \
+                state.can_reach_region(RegionName.Seaside_Overworld, self.player) and \
+                request_points_possible(state) >= 25
+        self.multiworld.get_location(LocationName.Buy_Whch_Stock, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Beach_Overworld, self.player) and \
+                request_points_possible(state) >= 10
+        self.multiworld.get_location(LocationName.Cant_Open_Safe, self.player).access_rule = \
+            lambda state: \
+                request_points_possible(state) >= 25
+        self.multiworld.get_location(LocationName.Get_The_Bad_Guy, self.player).access_rule = \
+            lambda state: \
+                state.has(ItemName.KeyData, self.player) and \
+                request_points_possible(state) >= 25
+        self.multiworld.get_location(LocationName.Update_Help, self.player).access_rule = \
+            lambda state: \
+                request_points_possible(state) >= 10
+        # Note: This request requires fire damage, but we assume you can get fire chips from Robo Control in a worst case
+        self.multiworld.get_location(LocationName.Do_Something, self.player).access_rule = \
+            lambda state: \
+                request_points_possible(state) >= 10
+        self.multiworld.get_location(LocationName.Want_Meet_Dghtr, self.player).access_rule = \
+            lambda state: \
+                state.can_reach_region(RegionName.Green_Cyberworld, self.player) and \
+                request_points_possible(state) >= 10
+        self.multiworld.get_location(LocationName.Not_Engh_Member, self.player).access_rule = \
+            lambda state: \
+                state.has_all({ItemName.Fanfare_Z, ItemName.Timpani_T}, self.player) and \
+                state.has(ItemName.Discord_S, self.player, 2) and \
+                request_points_possible(state) >= 10
+        self.multiworld.get_location(LocationName.Track_The_Crmnl_1, self.player).access_rule = \
+            lambda state: \
+                request_points_possible(state) >= 25
+        self.multiworld.get_location(LocationName.Track_The_Crmnl_2, self.player).access_rule = \
+            lambda state: \
+                request_points_possible(state) >= 25
+        self.multiworld.get_location(LocationName.Track_The_Crmnl_3, self.player).access_rule = \
+            lambda state: \
+                request_points_possible(state) >= 25
+        # To do the PA, we assume you get PoisSeed P, and have OrderSys to buy a second one.
+        self.multiworld.get_location(LocationName.Self_Research, self.player).access_rule = \
+            lambda state: \
+                state.has_all({ItemName.PoisSeed_P, ItemName.OrderSys, ItemName.Anubis_P}, self.player) and \
+                request_points_possible(state) >= 10
+        self.multiworld.get_location(LocationName.OfficialRequest_1, self.player).access_rule = \
+            lambda state: \
+                request_points_possible(state) >= 25
+        self.multiworld.get_location(LocationName.OfficialRequest_2, self.player).access_rule = \
+            lambda state: \
+                request_points_possible(state) >= 25
+        self.multiworld.get_location(LocationName.OfficialRequest_3, self.player).access_rule = \
+            lambda state: \
+                request_points_possible(state) >= 25
+        self.multiworld.get_location(LocationName.Wheres_My_Navi, self.player).access_rule = \
+            lambda state: \
                 state.can_reach_region(RegionName.Undernet, self.player) and \
-                state.can_reach_region(RegionName.Deep_Undernet, self.player) and \
-                state.has_all({ItemName.Press, ItemName.Magnum1_A}, self.player)
-        self.multiworld.get_location(LocationName.Legendary_Tomes_Treasure, self.player).access_rule = \
+                request_points_possible(state) >= 35
+        self.multiworld.get_location(LocationName.One_More_Time, self.player).access_rule = \
             lambda state: \
+                state.can_reach_region(RegionName.Green_Overworld, self.player) and \
                 state.can_reach_region(RegionName.ACDC_Overworld, self.player) and \
-                state.can_reach_location(LocationName.Legendary_Tomes, self.player)
-        self.multiworld.get_location(LocationName.Hide_and_seek_First_Child, self.player).access_rule = \
+                request_points_possible(state) >= 35
+        self.multiworld.get_location(LocationName.SupportChip_Pls, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Yoka_Overworld, self.player)
-        self.multiworld.get_location(LocationName.Hide_and_seek_Second_Child, self.player).access_rule = \
+                state.has_all({ItemName.Atk_30_star, ItemName.BblWrap_Q, ItemName.Geddon_A, ItemName.Recov80_H},
+                              self.player) and \
+                state.has(ItemName.Discord_S, self.player, 2) and \
+                request_points_possible(state) >= 35
+        self.multiworld.get_location(LocationName.Negotiate, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Yoka_Overworld, self.player)
-        self.multiworld.get_location(LocationName.Hide_and_seek_Third_Child, self.player).access_rule = \
+                state.can_reach_region(RegionName.Undernet, self.player) and \
+                state.can_reach_region(RegionName.Green_Overworld, self.player) and \
+                request_points_possible(state) >= 35
+        self.multiworld.get_location(LocationName.An_Experiment_1, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Yoka_Overworld, self.player)
-        self.multiworld.get_location(LocationName.Hide_and_seek_Fourth_Child, self.player).access_rule = \
+                request_points_possible(state) >= 25
+        self.multiworld.get_location(LocationName.An_Experiment_2, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Yoka_Overworld, self.player)
-        self.multiworld.get_location(LocationName.Hide_and_seek_Completion, self.player).access_rule = \
+                request_points_possible(state) >= 25
+        self.multiworld.get_location(LocationName.An_Experiment_3, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Yoka_Overworld, self.player)
-        self.multiworld.get_location(LocationName.Finding_the_blue_Navi, self.player).access_rule = \
+                request_points_possible(state) >= 25
+        self.multiworld.get_location(LocationName.RoadToSoulBtlr, self.player).access_rule = \
             lambda state: \
-                state.can_reach_region(RegionName.Undernet, self.player)
-        self.multiworld.get_location(LocationName.Give_your_support, self.player).access_rule = \
-            lambda state: \
-                state.can_reach_region(RegionName.Beach_Overworld, self.player)
-        self.multiworld.get_location(LocationName.Stamp_collecting, self.player).access_rule = \
-            lambda state: \
-                state.can_reach_region(RegionName.Beach_Overworld, self.player) and \
-                state.can_reach_region(RegionName.ACDC_Cyberworld, self.player) and \
-                state.can_reach_region(RegionName.SciLab_Cyberworld, self.player) and \
-                state.can_reach_region(RegionName.Yoka_Cyberworld, self.player) and \
-                state.can_reach_region(RegionName.Beach_Cyberworld, self.player)
-        self.multiworld.get_location(LocationName.Help_with_a_will, self.player).access_rule = \
-            lambda state: \
-                state.can_reach_region(RegionName.ACDC_Overworld, self.player) and \
-                state.can_reach_region(RegionName.ACDC_Cyberworld, self.player) and \
-                state.can_reach_region(RegionName.Yoka_Overworld, self.player) and \
-                state.can_reach_region(RegionName.Yoka_Cyberworld, self.player) and \
-                state.can_reach_region(RegionName.Beach_Overworld, self.player) and \
-                state.can_reach_region(RegionName.Undernet, self.player)
+                state.can_reach_region(RegionName.Green_Overworld, self.player) and \
+                request_points_possible(state) >= 25
 
         # Set Trade quests
-        self.multiworld.get_location(LocationName.ACDC_SonicWav_W_Trade, self.player).access_rule =\
-            lambda state: state.has(ItemName.SonicWav_W, self.player)
-        self.multiworld.get_location(LocationName.ACDC_Bubbler_C_Trade, self.player).access_rule =\
-            lambda state: state.has(ItemName.Bubbler_C, self.player)
-        self.multiworld.get_location(LocationName.ACDC_Recov120_S_Trade, self.player).access_rule =\
-            lambda state: state.has(ItemName.Recov120_S, self.player)
-        self.multiworld.get_location(LocationName.SciLab_Shake1_S_Trade, self.player).access_rule =\
-            lambda state: state.has(ItemName.Shake1_S, self.player)
-        self.multiworld.get_location(LocationName.Yoka_FireSwrd_P_Trade, self.player).access_rule =\
-            lambda state: state.has(ItemName.FireSwrd_P, self.player)
-        self.multiworld.get_location(LocationName.Hospital_DynaWav_V_Trade, self.player).access_rule =\
-            lambda state: state.has(ItemName.DynaWave_V, self.player)
-        self.multiworld.get_location(LocationName.Beach_DNN_WideSwrd_C_Trade, self.player).access_rule =\
-            lambda state: state.has(ItemName.WideSwrd_C, self.player)
-        self.multiworld.get_location(LocationName.Beach_DNN_HoleMetr_H_Trade, self.player).access_rule =\
-            lambda state: state.has(ItemName.HoleMetr_H, self.player)
-        self.multiworld.get_location(LocationName.Beach_DNN_Shadow_J_Trade, self.player).access_rule =\
-            lambda state: state.has(ItemName.Shadow_J, self.player)
-        self.multiworld.get_location(LocationName.Hades_GrabBack_K_Trade, self.player).access_rule =\
-            lambda state: state.has(ItemName.GrabBack_K, self.player)
+        self.multiworld.get_location(LocationName.Central_Barr100_H_Trade, self.player).access_rule = \
+            lambda state: state.has(ItemName.Barr100_H, self.player)
+        self.multiworld.get_location(LocationName.Aquarium_PnlRetrn_star_Trade, self.player).access_rule = \
+            lambda state: state.has(ItemName.PnlRetrn_star, self.player)
+        self.multiworld.get_location(LocationName.Green_HolyPnl_S_Trade, self.player).access_rule = \
+            lambda state: state.has(ItemName.HolyPanl_S, self.player)
+        self.multiworld.get_location(LocationName.AirCon_AuraHed1_B_Trade, self.player).access_rule = \
+            lambda state: state.has(ItemName.AuraHed1_B, self.player)
+        self.multiworld.get_location(LocationName.Class_1_2_EnergBom_K_Trade, self.player).access_rule = \
+            lambda state: state.has(ItemName.EnergBom_K, self.player)
+        self.multiworld.get_location(LocationName.Aquarium_DublShot_C_Trade, self.player).access_rule = \
+            lambda state: state.has(ItemName.DublShot_C, self.player)
+        self.multiworld.get_location(LocationName.WatrMchn_HiBoomer_V_Trade, self.player).access_rule = \
+            lambda state: state.has(ItemName.HiBoomer_V, self.player)
+        self.multiworld.get_location(LocationName.Sky_GrabRvng_I_Trade, self.player).access_rule = \
+            lambda state: state.has(ItemName.GrabRvng_I, self.player)
+        self.multiworld.get_location(LocationName.ACDC_BigBomb_O_Trade, self.player).access_rule = \
+            lambda state: state.has(ItemName.BigBomb_O, self.player)
 
         # Set Number Traders
 
-        # The first 8 are considered cheap enough to grind for in ACDC. Protip: Try grinding in the tank
-        self.multiworld.get_location(LocationName.Numberman_Code_09, self.player).access_rule = \
+        # The first 5 are considered cheap enough to grind for in Central. Central 2 GMDs can drop 600z.
+        self.multiworld.get_location(LocationName.Lotto_Code_06, self.player).access_rule = \
             lambda state: self.explore_score(state) > 2
-        self.multiworld.get_location(LocationName.Numberman_Code_10, self.player).access_rule = \
+        self.multiworld.get_location(LocationName.Lotto_Code_07, self.player).access_rule = \
             lambda state: self.explore_score(state) > 2
-        self.multiworld.get_location(LocationName.Numberman_Code_11, self.player).access_rule = \
+        self.multiworld.get_location(LocationName.Lotto_Code_08, self.player).access_rule = \
             lambda state: self.explore_score(state) > 2
-        self.multiworld.get_location(LocationName.Numberman_Code_12, self.player).access_rule = \
+        self.multiworld.get_location(LocationName.Lotto_Code_09, self.player).access_rule = \
             lambda state: self.explore_score(state) > 2
-        self.multiworld.get_location(LocationName.Numberman_Code_13, self.player).access_rule = \
+        self.multiworld.get_location(LocationName.Lotto_Code_10, self.player).access_rule = \
             lambda state: self.explore_score(state) > 2
-        self.multiworld.get_location(LocationName.Numberman_Code_14, self.player).access_rule = \
+        self.multiworld.get_location(LocationName.Lotto_Code_11, self.player).access_rule = \
             lambda state: self.explore_score(state) > 2
-        self.multiworld.get_location(LocationName.Numberman_Code_15, self.player).access_rule = \
+        self.multiworld.get_location(LocationName.Lotto_Code_12, self.player).access_rule = \
             lambda state: self.explore_score(state) > 2
-        self.multiworld.get_location(LocationName.Numberman_Code_16, self.player).access_rule = \
+        self.multiworld.get_location(LocationName.Lotto_Code_13, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 2
+        self.multiworld.get_location(LocationName.Lotto_Code_14, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 2
+        self.multiworld.get_location(LocationName.Lotto_Code_15, self.player).access_rule = \
             lambda state: self.explore_score(state) > 2
 
-        self.multiworld.get_location(LocationName.Numberman_Code_17, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 4
-        self.multiworld.get_location(LocationName.Numberman_Code_18, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 4
-        self.multiworld.get_location(LocationName.Numberman_Code_19, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 4
-        self.multiworld.get_location(LocationName.Numberman_Code_20, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 4
-        self.multiworld.get_location(LocationName.Numberman_Code_21, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 4
-        self.multiworld.get_location(LocationName.Numberman_Code_22, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 4
-        self.multiworld.get_location(LocationName.Numberman_Code_23, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 4
-        self.multiworld.get_location(LocationName.Numberman_Code_24, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 4
+        # After the first 15, require Millions logically.
+        self.multiworld.get_location(LocationName.Lotto_Code_16, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_17, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_18, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_19, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_20, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_21, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_22, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_23, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_24, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_25, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
 
-        self.multiworld.get_location(LocationName.Numberman_Code_25, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 8
-        self.multiworld.get_location(LocationName.Numberman_Code_26, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 8
-        self.multiworld.get_location(LocationName.Numberman_Code_27, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 8
-        self.multiworld.get_location(LocationName.Numberman_Code_28, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 8
+        self.multiworld.get_location(LocationName.Lotto_Code_26, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_27, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_28, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_29, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_30, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_31, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_32, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_33, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_34, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_35, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
 
-        self.multiworld.get_location(LocationName.Numberman_Code_29, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 10
-        self.multiworld.get_location(LocationName.Numberman_Code_30, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 10
-        self.multiworld.get_location(LocationName.Numberman_Code_31, self.player).access_rule =\
-            lambda state: self.explore_score(state) > 10
+        self.multiworld.get_location(LocationName.Lotto_Code_36, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_37, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_38, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_39, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_40, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_41, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_42, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_43, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_44, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_45, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
 
-        #miscellaneous locations with extra requirements
-        add_rule(self.multiworld.get_location(LocationName.Comedian, self.player),
-                 lambda state: state.has(ItemName.Humor, self.player))
-        add_rule(self.multiworld.get_location(LocationName.Villain, self.player),
-                 lambda state: state.has(ItemName.BlckMnd, self.player))
-        def not_undernet(item): return item.code != item_table[ItemName.Progressive_Undernet_Rank].code or item.player != self.player
-        self.multiworld.get_location(LocationName.WWW_1_Central_BMD, self.player).item_rule = not_undernet
-        self.multiworld.get_location(LocationName.WWW_1_East_BMD, self.player).item_rule = not_undernet
-        self.multiworld.get_location(LocationName.WWW_2_East_BMD, self.player).item_rule = not_undernet
-        self.multiworld.get_location(LocationName.WWW_2_Northwest_BMD, self.player).item_rule = not_undernet
-        self.multiworld.get_location(LocationName.WWW_3_East_BMD, self.player).item_rule = not_undernet
-        self.multiworld.get_location(LocationName.WWW_3_North_BMD, self.player).item_rule = not_undernet
-        self.multiworld.get_location(LocationName.WWW_4_Northwest_BMD, self.player).item_rule = not_undernet
-        self.multiworld.get_location(LocationName.WWW_4_Central_BMD, self.player).item_rule = not_undernet
-        self.multiworld.get_location(LocationName.WWW_Wall_BMD, self.player).item_rule = not_undernet
-        self.multiworld.get_location(LocationName.WWW_Control_Room_1_Screen, self.player).item_rule = not_undernet
-        self.multiworld.get_location(LocationName.WWW_Wilys_Desk, self.player).item_rule = not_undernet
+        self.multiworld.get_location(LocationName.Lotto_Code_46, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_47, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_48, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_49, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_50, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_51, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_52, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_53, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_54, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_55, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+
+        self.multiworld.get_location(LocationName.Lotto_Code_56, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_57, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+        self.multiworld.get_location(LocationName.Lotto_Code_58, self.player).access_rule = \
+            lambda state: state.has(ItemName.Millions, self.player) or state.has(ItemName.zenny_100000z, self.player)
+
+        # Gregar requires all 4 Win Cards to be defeatable:
+        self.multiworld.get_location(LocationName.Gregar_Defeated, self.player).access_rule = \
+            lambda state: \
+                state.has_all({ItemName.WinCardA, ItemName.WinCardB, ItemName.WinCardC, ItemName.WinCardD}, self.player)
 
         # place "Victory" at "Final Boss" and set collection as win condition
-        self.multiworld.get_location(LocationName.Alpha_Defeated, self.player) \
+        self.multiworld.get_location(LocationName.Gregar_Defeated, self.player) \
             .place_locked_item(self.create_event(ItemName.Victory))
         self.multiworld.completion_condition[self.player] = \
             lambda state: state.has(ItemName.Victory, self.player)
@@ -494,7 +747,7 @@ class MMBN3World(World):
             rom.write_changed_rom()
             rom.write_to_file(rompath)
 
-            patch = MMBN3DeltaPatch(os.path.splitext(rompath)[0]+MMBN3DeltaPatch.patch_file_ending, player=player,
+            patch = MMBN6DeltaPatch(os.path.splitext(rompath)[0] + MMBN6DeltaPatch.patch_file_ending, player=player,
                                     player_name=world.player_name[player], patched_path=rompath)
             patch.write()
         except:
@@ -511,39 +764,40 @@ class MMBN3World(World):
 
     def create_item(self, name: str) -> "Item":
         item = item_table[name]
-        return MMBN3Item(item.itemName, item.progression, item.code, self.player)
+        return MMBN6Item(item.itemName, item.progression, item.code, self.player)
 
     def create_event(self, event: str):
         # while we are at it, we can also add a helper to create events
-        return MMBN3Item(event, ItemClassification.progression, None, self.player)
+        return MMBN6Item(event, ItemClassification.progression, None, self.player)
 
     def fill_slot_data(self):
-        return self.options.as_dict("extra_ranks", "include_jobs", "trade_quest_hinting")
-
+        return self.options.as_dict("include_jobs", "trade_quest_hinting")
 
     def explore_score(self, state):
         """
         Determine roughly how much of the game you can explore to make certain checks not restrict much movement
         """
         score = 0
-        if state.can_reach_region(RegionName.WWW_Island, self.player):
-            return 999
-        if state.can_reach_region(RegionName.SciLab_Overworld, self.player):
-            score += 3
-        if state.can_reach_region(RegionName.SciLab_Cyberworld, self.player):
-            score += 1
-        if state.can_reach_region(RegionName.Yoka_Overworld, self.player):
+        if state.can_reach_region(RegionName.Seaside_Overworld, self.player):
             score += 2
-        if state.can_reach_region(RegionName.Yoka_Cyberworld, self.player):
+        if state.can_reach_region(RegionName.Seaside_Cyberworld, self.player):
             score += 1
-        if state.can_reach_region(RegionName.Beach_Overworld, self.player):
-            score += 3
-        if state.can_reach_region(RegionName.Beach_Cyberworld, self.player):
+        if state.can_reach_region(RegionName.Green_Overworld, self.player):
+            score += 1
+        if state.can_reach_region(RegionName.Green_Cyberworld, self.player):
+            score += 1
+        if state.can_reach_region(RegionName.Sky_Overworld, self.player):
+            score += 2
+        if state.can_reach_region(RegionName.Sky_Cyberworld, self.player):
+            score += 1
+        if state.can_reach_region(RegionName.ACDC_Overworld, self.player):
+            score += 1
+        if state.can_reach_region(RegionName.ACDC_Cyberworld, self.player):
             score += 1
         if state.can_reach_region(RegionName.Undernet, self.player):
-            score += 2
-        if state.can_reach_region(RegionName.Deep_Undernet, self.player):
             score += 1
-        if state.can_reach_region(RegionName.Secret_Area, self.player):
+        if state.can_reach_region(RegionName.Graveyard, self.player):
+            score += 1
+        if state.can_reach_region(RegionName.Expo, self.player):
             score += 1
         return score
