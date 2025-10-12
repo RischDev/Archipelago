@@ -7,8 +7,8 @@ import hashlib
 import bsdiff4
 from .lz10 import gba_decompress, gba_compress
 
-from .BN6RomUtils import ArchiveToReferences, read_u16_le, read_u32_le, int16_to_byte_list_le, int32_to_byte_list_le, \
-    ArchiveToSizeComp, ArchiveToSizeUncomp, generate_item_message, generate_external_item_message, generate_text_bytes, dictChar, \
+from .BN6RomUtils import ArchiveToReferences, read_u16_le, read_u32_le, int16_to_byte_list_le, int24_to_byte_list_le, \
+    ArchiveToSizeComp, ArchiveToSizeUncomp, generate_item_message, generate_external_item_message, generate_text_bytes, \
     update_mystery_data, update_mystery_data_external
 
 from .Items import ItemType
@@ -51,18 +51,19 @@ class ArchiveScript:
         for byte in message_bytes:
             byte_index += 1
             if byte == 0xF2 or byte == 0xE6:
+                if len(message_box) >= 2 and (message_box[-2] == 0xFA or message_box[-2] == 0xF4):
+                    # If there was a print item/chip or give item/chip command before this, then just add the byte and move on.
+                    message_box.append(byte)
+                    continue
+
                 if byte == 0xF2:  # More textboxes to come, don't end it yet
                     message_box.append(byte)
                     self.messageBoxes.append(message_box)
                 else:  # It's the end of the script, add another message to end it after this one
-                    if len(message_box) >= 2 and (message_box[-2] == 0xFA or message_box[-2] == 0xF4):
-                        message_box.append(byte)
-                    else:
-                        self.messageBoxes.append(message_box)
-                        self.messageBoxes.append([0xE6])
+                    self.messageBoxes.append(message_box)
+                    self.messageBoxes.append([0xE6])
 
-                if not(len(message_box) >= 3 and (message_box[-3] == 0xFA or message_box[-3] == 0xF4)):
-                    message_box = []
+                message_box = []
 
             else:
                 message_box.append(byte)
@@ -103,6 +104,13 @@ class TextArchive:
         for i in range(0, self.scriptCount):
             start_offset = read_u16_le(self.uncompressedData, i * 2)
             next_offset = read_u16_le(self.uncompressedData, (i + 1) * 2)
+
+            # The last script is assumed to go until the end of the specified region of the ROM
+            if i == self.scriptCount - 1:
+                next_offset = len(self.uncompressedData)
+
+            if offset == 0x754BD8 and i == 106:
+                print(f"{''.join('{:02x} '.format(byte) for byte in self.uncompressedData[start_offset:next_offset])}")
 
             if start_offset != next_offset:
                 message_bytes = list(self.uncompressedData[start_offset:next_offset])
@@ -159,10 +167,11 @@ class TextArchive:
         while len(modified_rom_data) % 4 != 0:
             modified_rom_data.append(0xFF)
         new_start_offset = 0x08000000 + len(modified_rom_data)
-        offset_byte = int32_to_byte_list_le(new_start_offset)
+        # Only try to inject the 3 bytes after 0x08 or 0x88 for references
+        offset_byte = int24_to_byte_list_le(len(modified_rom_data))
         modified_rom_data.extend(working_data)
         for offset in self.references:
-            modified_rom_data[offset:offset+4] = offset_byte
+            modified_rom_data[offset:offset+3] = offset_byte
         return modified_rom_data
 
     def inject_item_text(self, item_text, next_message=""):
@@ -183,7 +192,7 @@ class TextArchive:
                             oldbytes.extend(next_message_bytes)
                             # TODO append end message nextline etc.
                             # I think this is "wait for button press" then "clearmessage"
-                            oldbytes.extend([0xEB, 0xE9])
+                            oldbytes.extend([0xE0, 0x00, 0xF2])
                         self.scripts[script_index].messageBoxes[message_index] = oldbytes
 
 
@@ -203,7 +212,7 @@ class LocalRom:
         offset = location.update_address
 
         # For Mystery Data, we need to update the Mystery Data table. For everything else, we update the Text Archive.
-        if (location.type == LocationType.BlueMysteryData or location.type == LocationType.PurpleMysteryData):
+        if location.type == LocationType.BlueMysteryData or location.type == LocationType.PurpleMysteryData:
             if item.type == ItemType.External:
                 self.rom_data = update_mystery_data_external(self.rom_data, offset)
             else:
