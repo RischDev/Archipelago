@@ -228,12 +228,12 @@ overworlds = [
     LocationData(LocationName.Undernet_0_Heel_Navi,               0xB610AA, 0x1D32, 0x40, LocationType.OverWorld, 0x794404,  11, [1]),
     LocationData(LocationName.Green_Punishment_Room_Prog,         0xB610AB, 0x1EAC, 0x02, LocationType.OverWorld, 0x77C318,   5, [2]),
     LocationData(LocationName.Sky_1_Brown_Navi,                   0xB610AC, 0x1CB9, 0x04, LocationType.OverWorld, 0x7903B4,   6, [2]),
-    LocationData(LocationName.Bass,                               0xB610AD, 0x1E89, 0x01, LocationType.OverWorld, 0x7D6DC0,   2, [2]),
+    LocationData(LocationName.Bass,                               0xB610AD, 0x1E89, 0x01, LocationType.OverWorld, 0x7D6DC0,   2, [1]),
     LocationData(LocationName.Talk_To_Mayl,                       0xB610AE, 0x1CC5, 0x20, LocationType.OverWorld, 0x766E28,  11, [3]),
-    LocationData(LocationName.ElecMan_Class,                      0xB6111E, 0x1DDF, 0x10, LocationType.OverWorld, 0x7BFE50,   4, [2]),
-    LocationData(LocationName.SlashMan_Class,                     0xB6111F, 0x1D94, 0x80, LocationType.OverWorld, 0x7BA78C,   0, [6]),
-    LocationData(LocationName.EraseMan_Class,                     0xB61120, 0x1E23, 0x04, LocationType.OverWorld, 0x7C9D54,   0, [3]),
-    LocationData(LocationName.ChargeMan_Class,                    0xB61121, 0x1E24, 0x40, LocationType.OverWorld, 0x7CB584,  0, [3])
+    LocationData(LocationName.ElecMan_Class,                      0xB6111E, 0x1DDF, 0x10, LocationType.OverWorld, 0x7BFE50,   5, [0]),
+    LocationData(LocationName.SlashMan_Class,                     0xB6111F, 0x1D94, 0x80, LocationType.OverWorld, 0x7BA78C,   1, [0]),
+    LocationData(LocationName.EraseMan_Class,                     0xB61120, 0x1E23, 0x04, LocationType.OverWorld, 0x7C9D54,   1, [0]),
+    LocationData(LocationName.ChargeMan_Class,                    0xB61121, 0x1E24, 0x40, LocationType.OverWorld, 0x7CB584,  1, [0])
 ]
 
 requests = [
@@ -264,19 +264,19 @@ requests = [
     LocationData(LocationName.Want_Meet_Dghtr,          0xB610C7, 0x2016, 0x20, LocationType.Request, 0x79B094,   4, [9]),
     LocationData(LocationName.Not_Engh_Member,          0xB610C8, 0x2016, 0x10, LocationType.Request, 0x79C598,   2, [4, 5]),
     LocationData(LocationName.Track_The_Crmnl_1,        0xB610C9, 0x2016, 0x08, LocationType.Request, 0x777218,  12, [4]),
-    LocationData(LocationName.Track_The_Crmnl_2,        0xB610CA, 0x2016, 0x08, LocationType.Request, 0x777218,  12, [4]),
-    LocationData(LocationName.Track_The_Crmnl_3,        0xB610CB, 0x2016, 0x08, LocationType.Request, 0x777218,  12, [4, 5]),
+    LocationData(LocationName.Track_The_Crmnl_2,        0xB610CA, 0x2016, 0x08, LocationType.Request, 0x777218,  12, [5]),
+    LocationData(LocationName.Track_The_Crmnl_3,        0xB610CB, 0x2016, 0x08, LocationType.Request, 0x777218,  12, [6]),
     LocationData(LocationName.Self_Research,            0xB610CC, 0x2017, 0x01, LocationType.Request, 0x79CAE4,   2, [7]),
-    LocationData(LocationName.OfficialRequest_1,        0xB610CD, 0x2018, 0x80, LocationType.Request, 0x7A0B40,   3, [3, 4]),
-    LocationData(LocationName.OfficialRequest_2,        0xB610CE, 0x2018, 0x80, LocationType.Request, 0x7A0B40,   3, [3, 4]),
-    LocationData(LocationName.OfficialRequest_3,        0xB610CF, 0x2018, 0x80, LocationType.Request, 0x7A0B40,   3, [3, 4]),
+    LocationData(LocationName.OfficialRequest_1,        0xB610CD, 0x2018, 0x80, LocationType.Request, 0x7A0B40,   3, [3]),
+    LocationData(LocationName.OfficialRequest_2,        0xB610CE, 0x2018, 0x80, LocationType.Request, 0x7A0B40,   3, [4]),
+    LocationData(LocationName.OfficialRequest_3,        0xB610CF, 0x2018, 0x80, LocationType.Request, 0x7A0B40,   3, [5]),
     LocationData(LocationName.Wheres_My_Navi,           0xB610D0, 0x2016, 0x04, LocationType.Request, 0x76AD9C,   2, [4]),
     LocationData(LocationName.One_More_Time,            0xB610D1, 0x2016, 0x02, LocationType.Request, 0x764B38, 122, [4]),
-    LocationData(LocationName.SupportChip_Pls,          0xB610D2, 0x2016, 0x01, LocationType.Request, 0x77E80C,  12, [4]),
+    LocationData(LocationName.SupportChip_Pls,          0xB610D2, 0x2016, 0x01, LocationType.Request, 0x77E80C,  14, [4]),
     LocationData(LocationName.Negotiate,                0xB610D3, 0x2017, 0x80, LocationType.Request, 0x77E80C,  24, [4]),
-    LocationData(LocationName.An_Experiment_1,          0xB610D4, 0x2018, 0x40, LocationType.Request, 0x7755B8,  84, [4, 5]),
-    LocationData(LocationName.An_Experiment_2,          0xB610D5, 0x2018, 0x40, LocationType.Request, 0x7755B8,  84, [4, 5]),
-    LocationData(LocationName.An_Experiment_3,          0xB610D6, 0x2018, 0x40, LocationType.Request, 0x7755B8,  84, [4, 5]),
+    LocationData(LocationName.An_Experiment_1,          0xB610D4, 0x2018, 0x40, LocationType.Request, 0x7755B8,  84, [4]),
+    LocationData(LocationName.An_Experiment_2,          0xB610D5, 0x2018, 0x40, LocationType.Request, 0x7755B8,  84, [5]),
+    LocationData(LocationName.An_Experiment_3,          0xB610D6, 0x2018, 0x40, LocationType.Request, 0x7755B8,  84, [6]),
     LocationData(LocationName.RoadToSoulBtlr,           0xB610D7, 0x2018, 0x20, LocationType.Request, 0x79A664,  24, [7])
 ]
 
@@ -336,9 +336,9 @@ lotto_codes = [
     LocationData(LocationName.Lotto_Code_53, 0xB6110C, 0x2152, 0x08, LocationType.LottoCode, 0x754BD8, 110, [0]),
     LocationData(LocationName.Lotto_Code_54, 0xB6110D, 0x2152, 0x04, LocationType.LottoCode, 0x754BD8, 111, [0]),
     LocationData(LocationName.Lotto_Code_55, 0xB6110E, 0x2152, 0x02, LocationType.LottoCode, 0x754BD8, 112, [0]),
-    LocationData(LocationName.Lotto_Code_56, 0xB6110F, 0x2152, 0x01, LocationType.LottoCode, 0x754BD8, 113, [0]),
-    LocationData(LocationName.Lotto_Code_57, 0xB61110, 0x2153, 0x80, LocationType.LottoCode, 0x754BD8, 114, [0]),
-    LocationData(LocationName.Lotto_Code_58, 0xB61111, 0x2153, 0x40, LocationType.LottoCode, 0x754BD8, 115, [0])
+    LocationData(LocationName.Lotto_Code_56, 0xB6110F, 0x2152, 0x01, LocationType.LottoCode, 0x754BD8, 113, [0, 1, 2]),
+    LocationData(LocationName.Lotto_Code_57, 0xB61110, 0x2153, 0x80, LocationType.LottoCode, 0x754BD8, 114, [0, 1, 2]),
+    LocationData(LocationName.Lotto_Code_58, 0xB61111, 0x2153, 0x40, LocationType.LottoCode, 0x754BD8, 115, [0, 1, 2])
 ]
 
 bosses = [

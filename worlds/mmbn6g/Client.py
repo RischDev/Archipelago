@@ -5,16 +5,19 @@ from typing import TYPE_CHECKING
 from NetUtils import ClientStatus
 from .._bizhawk import guarded_write, guarded_read, RequestFailedError, read, write, display_message
 from .._bizhawk.client import BizHawkClient
-from .Locations import all_locations, LocationData, LocationType
+from .Locations import all_locations, LocationData, LocationType, scoutable_locations
 from .Items import all_items, ItemType, ItemData, programs_to_item_id, chips_amount_index
-from .BN6RomUtils import int32_to_byte_list_le
+from .BN6RomUtils import int32_to_byte_list_le, int16_to_byte_list_le
 
 if TYPE_CHECKING:
     from .._bizhawk.context import BizHawkClientContext
 
 logger = logging.getLogger("Client")
 
-ROM_ADDRS = {"game_identifier": (0xA0, 10, "ROM")}
+ROM_ADDRS = {
+    "game_identifier": (0xA0, 10, "ROM"),
+    "player_name": (0x7FFFC0, 63, "ROM")
+}
 
 RAM_ADDRS = {
     # 0x00: World Initialization
@@ -35,12 +38,25 @@ RAM_ADDRS = {
     "main_area": (0x1B84, 1, "IWRAM"),
     #
     "sub_area": (0x1B85, 1, "IWRAM"),
+    # Start location of library array
+    "chip_library_start": (0x223C, 1, "EWRAM"),
+    "key_item_amount_start": (0x3134, 1, "EWRAM"),
+    # Base value is set on new game. Does "Zenny Amount XOR Anticheat Base" to get anticheat value
+    "key_item_anticheat_base_start": (0x04E0, 1, "EWRAM"),
+    "key_item_anticheat_value_start": (0x4A8C, 1, "EWRAM"),
     "zenny_amount": (0x1BDC, 4, "EWRAM"),
     # Base value is set on new game. Does "Zenny Amount XOR Anticheat Base" to get anticheat value
     "zenny_anticheat_base": (0x0060, 4, "EWRAM"),
+    "zenny_anticheat_value": (0x5028, 4, "EWRAM"),
     "bugfrag_amount": (0x1BE0, 4, "EWRAM"),
     # Base value is set on new game. Does "BugFrag Amount XOR Anticheat Base" to get anticheat value
     "bugfrag_anticheat_base": (0x18B8, 4, "EWRAM"),
+    "bugfrag_anticheat_value": (0x5030, 4, "EWRAM"),
+    # HP values. Base HP is before navicust programs
+    "base_hp": (0x480A, 2, "EWRAM"),
+    "curr_hp": (0x480C, 2, "EWRAM"),
+    "max_hp": (0x480E, 2, "EWRAM"),
+    "reg_mem": (0x47D5, 2, "EWRAM"),
     # An arbitrary address that isn't used strictly by the game
     # We'll use it to store the index of the last processed remote item
     # (May actually be used somewhere, but I guess we'll find out)
@@ -48,7 +64,17 @@ RAM_ADDRS = {
     # A set of flags set by early game cutscenes. Since this should be 0x00, we use this to know if RAM can be trusted
     "canary_byte": (0x1D09, 1, "EWRAM"),
     # Contains the victory flag at bit 0x80
-    "gregar_icon_flag": (0x1E48, 1, "EWRAM")
+    "gregar_icon_flag": (0x1E48, 1, "EWRAM"),
+    "transformation_flags": (0x1CA4, 1, "EWRAM")
+}
+
+SPECIAL_KEY_ITEMS = {
+    "BeastOut": 10,
+    "HeatCross": 53,
+    "SlashCross": 55,
+    "ElecCross": 56,
+    "EraseCross": 58,
+    "ChargeCross": 60
 }
 
 
@@ -62,6 +88,7 @@ class MMBN6Client(BizHawkClient):
     sub_area: int
     player_name: str | None
     seed_verify = False
+    sent_hints = []
 
     def __init__(self) -> None:
         super().__init__()
@@ -89,7 +116,7 @@ class MMBN6Client(BizHawkClient):
         ctx.items_handling = 0b111
         ctx.want_slot_data = True
         ctx.watcher_timeout = 0.5
-        name_bytes = (await read(ctx.bizhawk_ctx, [(0x7FFFC0, 63, "ROM")]))[0]
+        name_bytes = (await read(ctx.bizhawk_ctx, [ROM_ADDRS["player_name"]]))[0]
         name = bytes([byte for byte in name_bytes if byte != 0]).decode("UTF-8")
         self.player_name = name
 
@@ -132,6 +159,7 @@ class MMBN6Client(BizHawkClient):
                 if game_state == 0x04:
                     await self.handle_item_receiving(ctx, received_index)
                     await self.handle_location_sending(ctx)
+                    await self.handle_scoutable_locations(ctx)
                     await self.handle_special_items(ctx)
 
                 # Player moved to a new room that isn't the pause menu. Pause menu `room_area_id` == 0x0000
@@ -148,7 +176,7 @@ class MMBN6Client(BizHawkClient):
         # First four bytes are amount, then four 2-byte values indicating pack location. We don't need to bother setting
         # pack location, so just change amount and move on.
         index = chips_amount_index[chip]
-        amount = await read(ctx.bizhawk_ctx, [(0x223C + index, 1, "EWRAM")])
+        amount = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["chip_library_start"][0] + index, 1, "EWRAM")])
 
         write_result = False
         total = 0
@@ -156,8 +184,8 @@ class MMBN6Client(BizHawkClient):
             # Write to the address if it hasn't changed.
             # Anticheat mechanism just XORs the base value with 0x55
             write_result = await guarded_write(ctx.bizhawk_ctx,
-                                               [(0x223C + index, [amount[0][0] + 1], "EWRAM")],
-                                               [(0x223C + index, [amount[0][0]], "EWRAM")])
+                                               [(RAM_ADDRS["chip_library_start"][0] + index, [amount[0][0] + 1], "EWRAM")],
+                                               [(RAM_ADDRS["chip_library_start"][0] + index, [amount[0][0]], "EWRAM")])
 
             await asyncio.sleep(0.05)
             total += 0.05
@@ -171,9 +199,16 @@ class MMBN6Client(BizHawkClient):
     @staticmethod
     async def give_item(ctx: "BizHawkClientContext", item) -> bool:
         # First, get the amount of that item we have
-        amount = await read(ctx.bizhawk_ctx, [(0x3134 + item, 1, "EWRAM")])
+        amount = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + item, 1, "EWRAM")])
         # Get the base anticheat value
-        anticheat_base = await read(ctx.bizhawk_ctx, [(0x04E0 + item, 1, "EWRAM")])
+        anticheat_base = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_anticheat_base_start"][0] + item, 1, "EWRAM")])
+
+        # If item is SubMemry and amount is already two, return. Never let the player have more than 8 SubMemrys
+        if item == 117 and amount[0][0] >= 8:
+            return True
+        # If item is ExpMemry and amount is already two, return. Never let the player have more than 2 ExpMemrys
+        if item == 113 and amount[0][0] >= 2:
+            return True
 
         write_result = False
         total = 0
@@ -181,9 +216,75 @@ class MMBN6Client(BizHawkClient):
             # Write to the address if it hasn't changed.
             # Anticheat mechanism just XORs the base value with 0x55
             write_result = await guarded_write(ctx.bizhawk_ctx,
-                                               [(0x3134 + item, [amount[0][0] + 1], "EWRAM"),
-                                                (0x4A8C + item, [anticheat_base[0][0] ^ 0x55], "EWRAM")],
-                                               [(0x3134 + item, [amount[0][0]], "EWRAM")])
+                                               [(RAM_ADDRS["key_item_amount_start"][0] + item, [amount[0][0] + 1], "EWRAM"),
+                                                (RAM_ADDRS["key_item_anticheat_value_start"][0] + item, [anticheat_base[0][0] ^ 0x55], "EWRAM")],
+                                               [(RAM_ADDRS["key_item_amount_start"][0] + item, [amount[0][0]], "EWRAM")])
+
+            await asyncio.sleep(0.05)
+            total += 0.05
+            if write_result:
+                total = 1
+            if total > 1:
+                return False
+
+        return True
+
+    @staticmethod
+    async def give_hp_mem(ctx: "BizHawkClientContext") -> bool:
+        # First, get the hp amounts we have
+        read_result = await read(ctx.bizhawk_ctx, [
+            RAM_ADDRS["base_hp"],
+            RAM_ADDRS["curr_hp"],
+            RAM_ADDRS["max_hp"]
+        ])
+
+        base_hp = (read_result[0][1] << 8) + read_result[0][0]
+        curr_hp = (read_result[1][1] << 8) + read_result[1][0]
+        max_hp = (read_result[2][1] << 8) + read_result[2][0]
+
+        # If Base HP is already 1000, don't give more HP.
+        if base_hp == 1000:
+            return True
+
+        write_result = False
+        total = 0
+        while not write_result:
+            # Write to the addresses if they haven't changed.
+            write_result = await guarded_write(ctx.bizhawk_ctx,
+                                               [(RAM_ADDRS["base_hp"][0], int16_to_byte_list_le(base_hp + 20), "EWRAM"),
+                                                        (RAM_ADDRS["curr_hp"][0], int16_to_byte_list_le(curr_hp + 20), "EWRAM"),
+                                                        (RAM_ADDRS["max_hp"][0], int16_to_byte_list_le(max_hp + 20), "EWRAM")],
+                                               [(RAM_ADDRS["base_hp"][0], int16_to_byte_list_le(base_hp), "EWRAM"),
+                                                        (RAM_ADDRS["curr_hp"][0], int16_to_byte_list_le(curr_hp), "EWRAM"),
+                                                        (RAM_ADDRS["max_hp"][0], int16_to_byte_list_le(max_hp), "EWRAM")])
+
+            await asyncio.sleep(0.05)
+            total += 0.05
+            if write_result:
+                total = 1
+            if total > 1:
+                return False
+
+        return True
+
+    @staticmethod
+    async def give_reg_up(ctx: "BizHawkClientContext", amount) -> bool:
+        # First, get the hp amounts we have
+        read_result = await read(ctx.bizhawk_ctx, [RAM_ADDRS["reg_mem"]])
+
+        reg_mem = read_result[0][0]
+
+        # If Reg Memory is already 50, don't give more memory.
+        if reg_mem == 50:
+            return True
+
+        write_result = False
+        total = 0
+        while not write_result:
+            # Write to the addresses if they haven't changed.
+            write_result = await guarded_write(ctx.bizhawk_ctx,
+                                               [(RAM_ADDRS["reg_mem"][0], [reg_mem + amount], "EWRAM")],
+                                               [(RAM_ADDRS["reg_mem"][0], [reg_mem], "EWRAM")])
 
             await asyncio.sleep(0.05)
             total += 0.05
@@ -203,18 +304,20 @@ class MMBN6Client(BizHawkClient):
         ])
 
         curr_zenny = int.from_bytes(read_result[0], "little")
+        # Don't let the player have more than 999,999z
+        new_zenny = min(curr_zenny + amount, 999999)
         anticheat_base = int.from_bytes(read_result[1], "little")
-        anticheat_value = (curr_zenny + amount) ^ anticheat_base
+        anticheat_value = new_zenny ^ anticheat_base
 
         write_result = False
         total = 0
         while not write_result:
             # Write to the address if it hasn't changed
             write_result = await guarded_write(ctx.bizhawk_ctx,
-                                               [(0x1BDC, int32_to_byte_list_le(curr_zenny + amount), "EWRAM"),
-                                                (0x5028, int32_to_byte_list_le(anticheat_value), "EWRAM")],
-                                               [(0x1BDC, int32_to_byte_list_le(curr_zenny), "EWRAM"),
-                                                (0x5028, int32_to_byte_list_le(curr_zenny ^ anticheat_base), "EWRAM")])
+                                               [(RAM_ADDRS["zenny_amount"][0], int32_to_byte_list_le(new_zenny), "EWRAM"),
+                                                (RAM_ADDRS["zenny_anticheat_value"][0], int32_to_byte_list_le(anticheat_value), "EWRAM")],
+                                               [(RAM_ADDRS["zenny_amount"][0], int32_to_byte_list_le(curr_zenny), "EWRAM"),
+                                                (RAM_ADDRS["zenny_anticheat_value"][0], int32_to_byte_list_le(curr_zenny ^ anticheat_base), "EWRAM")])
 
             await asyncio.sleep(0.05)
             total += 0.05
@@ -234,18 +337,20 @@ class MMBN6Client(BizHawkClient):
         ])
 
         curr_bugfrag = int.from_bytes(read_result[0], "little")
+        # Don't let the player have more than 9,999 bugfrags
+        new_bugfrag = min(curr_bugfrag + amount, 9999)
         anticheat_base = int.from_bytes(read_result[1], "little")
-        anticheat_value = (curr_bugfrag + amount) ^ anticheat_base
+        new_anticheat_value = new_bugfrag ^ anticheat_base
 
         write_result = False
         total = 0
         while not write_result:
             # Write to the address if it hasn't changed
             write_result = await guarded_write(ctx.bizhawk_ctx,
-                                               [(0x1BE0, int32_to_byte_list_le(curr_bugfrag + amount), "EWRAM"),
-                                                (0x5030, int32_to_byte_list_le(anticheat_value), "EWRAM")],
-                                               [(0x1BE0, int32_to_byte_list_le(curr_bugfrag), "EWRAM"),
-                                                (0x5030, int32_to_byte_list_le(curr_bugfrag ^ anticheat_base), "EWRAM")])
+                                               [(RAM_ADDRS["bugfrag_amount"][0], int32_to_byte_list_le(new_bugfrag), "EWRAM"),
+                                                (RAM_ADDRS["bugfrag_anticheat_value"][0], int32_to_byte_list_le(new_anticheat_value), "EWRAM")],
+                                               [(RAM_ADDRS["bugfrag_amount"][0], int32_to_byte_list_le(curr_bugfrag), "EWRAM"),
+                                                (RAM_ADDRS["bugfrag_anticheat_value"][0], int32_to_byte_list_le(curr_bugfrag ^ anticheat_base), "EWRAM")])
 
             await asyncio.sleep(0.05)
             total += 0.05
@@ -258,28 +363,40 @@ class MMBN6Client(BizHawkClient):
 
     async def handle_item_receiving(self, ctx: "BizHawkClientContext", received_index: int) -> None:
         # Read all pending receive items and dump into game ram
-        print(received_index, len(ctx.items_received))
         for i in range(len(ctx.items_received) - received_index):
             result = False
             location_id = ctx.items_received[received_index + i].location
-            location = self.location_by_id[location_id]
-            if location is not None and location.type != LocationType.Boss:
-                # Skip over local non-Boss locations
-                print("Skipping over local non-Boss received item")
-                await write(ctx.bizhawk_ctx, [(
-                    RAM_ADDRS["received_index"][0],
-                    [(received_index + i + 1) // 0x100, (received_index + i + 1) % 0x100],
-                    "EWRAM",
-                )])
-                break
+            if location_id in self.location_by_id:
+                location = self.location_by_id[location_id]
+
+                if not location.type == LocationType.Boss:
+                    print(f"Skipping local non-Boss location: {location_id}")
+                    await write(ctx.bizhawk_ctx, [(
+                        RAM_ADDRS["received_index"][0],
+                        [(received_index + i + 1) // 0x100, (received_index + i + 1) % 0x100],
+                        "EWRAM",
+                    )])
+                    break
 
             item_id = ctx.items_received[received_index + i].item
             item = self.item_by_id[item_id]
             if item.type == ItemType.Chip:
                 result = await self.give_chip(ctx, item.itemName)
             elif item.type == ItemType.KeyItem or item.type == ItemType.SubChip:
-                result = await self.give_item(ctx, item.itemID)
-                print(result)
+                if item.itemID == 112:
+                    # HP Memory
+                    result = await self.give_hp_mem(ctx)
+                elif item.itemID == 114:
+                    # RegUp1
+                    result = await self.give_reg_up(ctx, 1)
+                elif item.itemID == 115:
+                    # RegUp2
+                    result = await self.give_reg_up(ctx, 2)
+                elif item.itemID == 116:
+                    # RegUp3
+                    result = await self.give_reg_up(ctx, 3)
+                else:
+                    result = await self.give_item(ctx, item.itemID)
             elif item.type == ItemType.Program:
                 # Programs use the same area of memory as key items, but start at itemID 148
                 result = await self.give_item(ctx, programs_to_item_id[item.itemName])
@@ -290,6 +407,7 @@ class MMBN6Client(BizHawkClient):
 
             if not result:
                 break
+            await display_message(ctx.bizhawk_ctx, "Received item " + item.itemName)
             await write(ctx.bizhawk_ctx, [(
                 RAM_ADDRS["received_index"][0],
                 [(received_index + i + 1) // 0x100, (received_index + i + 1) % 0x100],
@@ -302,7 +420,7 @@ class MMBN6Client(BizHawkClient):
                              if self.location_by_id[loc_id].flag_byte is not None]
         location_reads = [(loc.flag_byte, 1, "EWRAM") for loc in locations_to_read]
         # Only do location checks if the game state is still 0x04
-        loc_bytes = await guarded_read(ctx.bizhawk_ctx, location_reads, [(0x1B80, [0x04], "EWRAM")])
+        loc_bytes = await guarded_read(ctx.bizhawk_ctx, location_reads, [(RAM_ADDRS["game_state"][0], [0x04], "EWRAM")])
 
         if loc_bytes is not None:
             locs_to_send = [locations_to_read[i].id for i, loc_ram in enumerate(loc_bytes)
@@ -314,32 +432,50 @@ class MMBN6Client(BizHawkClient):
 
     async def handle_special_items(self, ctx: "BizHawkClientContext") -> None:
         # If we have any of the Cross or BeastOut key items, set the proper flags
-        beastout = await read(ctx.bizhawk_ctx, [(0x3134 + 10, 1, "EWRAM")])
-        heat_cross = await read(ctx.bizhawk_ctx, [(0x3134 + 53, 1, "EWRAM")])
-        slash_cross = await read(ctx.bizhawk_ctx, [(0x3134 + 55, 1, "EWRAM")])
-        elec_cross = await read(ctx.bizhawk_ctx, [(0x3134 + 56, 1, "EWRAM")])
-        erase_cross = await read(ctx.bizhawk_ctx, [(0x3134 + 58, 1, "EWRAM")])
-        charge_cross = await read(ctx.bizhawk_ctx, [(0x3134 + 60, 1, "EWRAM")])
+        beastout = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["BeastOut"], 1, "EWRAM")])
+        heatcross = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["HeatCross"], 1, "EWRAM")])
+        slashcross = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["SlashCross"], 1, "EWRAM")])
+        eleccross = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["ElecCross"], 1, "EWRAM")])
+        erasecross = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["EraseCross"], 1, "EWRAM")])
+        chargecross = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["ChargeCross"], 1, "EWRAM")])
 
-        flag_val = await read(ctx.bizhawk_ctx, [(0x1CA4, 1, "EWRAM")])
+        flag_val = await read(ctx.bizhawk_ctx, [RAM_ADDRS["transformation_flags"]])
         new_val = flag_val[0][0]
 
         if beastout[0][0] > 0:
             new_val = new_val | 0x80
-            await display_message(ctx.bizhawk_ctx, "Enabling BeastOut")
-        if heat_cross[0][0] > 0:
+        if heatcross[0][0] > 0:
             new_val = new_val | 0x20
-        if slash_cross[0][0] > 0:
+        if slashcross[0][0] > 0:
             new_val = new_val | 0x08
-        if elec_cross[0][0] > 0:
+        if eleccross[0][0] > 0:
             new_val = new_val | 0x10
-        if erase_cross[0][0] > 0:
+        if erasecross[0][0] > 0:
             new_val = new_val | 0x04
-        if charge_cross[0][0] > 0:
+        if chargecross[0][0] > 0:
             new_val = new_val | 0x02
             
         if not(flag_val[0][0] == new_val):
-            await guarded_write(ctx.bizhawk_ctx,[(0x1CA4, [new_val], "EWRAM")],[(0x1CA4, flag_val[0], "EWRAM")])
+            await guarded_write(ctx.bizhawk_ctx,[(RAM_ADDRS["transformation_flags"][0], [new_val], "EWRAM")],
+                                                [(RAM_ADDRS["transformation_flags"][0], flag_val[0], "EWRAM")])
+
+    @staticmethod
+    async def check_location_scouted(ctx, location):
+        flag_value = await read(ctx.bizhawk_ctx, [(location.hint_flag, 1, "EWRAM")])
+
+        return flag_value[0][0] | location.hint_flag_mask == flag_value[0][0]
+
+    async def handle_scoutable_locations(self, ctx: "BizHawkClientContext") -> None:
+        trade_bits = [loc.id for loc in scoutable_locations
+                      if await self.check_location_scouted(ctx, loc)]
+        scouted_locs = [loc for loc in trade_bits if loc not in self.sent_hints]
+        if len(scouted_locs) > 0:
+            self.sent_hints.extend(scouted_locs)
+            await ctx.send_msgs([{
+                "cmd": "LocationScouts",
+                "locations": scouted_locs,
+                "create_as_hint": 2
+            }])
 
     async def handle_room_change(self, ctx: "BizHawkClientContext", main_area_id, sub_area_id) -> None:
         self.main_area = main_area_id

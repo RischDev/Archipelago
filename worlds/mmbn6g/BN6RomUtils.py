@@ -77,6 +77,12 @@ def int32_to_byte_list_le(x) -> bytearray:
     data.reverse()
     return data
 
+def int24_to_byte_list_le(x) -> bytearray:
+    byte24_string = "{:06x}".format(x)
+    data = bytearray.fromhex(byte24_string)
+    data.reverse()
+    return data
+
 def int16_to_byte_list_le(x) -> bytearray:
     byte32_string = "{:04x}".format(x)
     data = bytearray.fromhex(byte32_string)
@@ -155,6 +161,7 @@ def generate_get_for_item(item) -> bytearray:
 
 def generate_item_message(item_data) -> bytearray:
     byte_list = [0xF5, 0x01]  # Hide Mugshot
+    byte_list.extend([0xE8, 0x00])  # OpenMsg
     byte_list.extend([0xF8, 0x05, 0x18])  # Play Animation
     byte_list.extend(generate_get_for_item(item_data))
     byte_list.extend([0xF8, 0x03]) # Player Finish
@@ -167,10 +174,18 @@ def generate_item_message(item_data) -> bytearray:
 # Unfortunately, since mystery data are not handled through text archives normally, we
 # have to give a special "key item" that has been renamed to "AP Item" for external items
 def generate_external_item_message(item_name, item_recipient) -> bytearray:
+    byte_list = [0xF5, 0x01]  # Hide Mugshot
+    byte_list.extend([0xE8, 0x00])  # OpenMsg
+    byte_list.extend([0xF8, 0x05, 0x18])  # Play Animation
     byte_list = [0xF4, 0x00, 0x37, 0x1]
     byte_list.extend(generate_text_bytes("Got a \n\""))
     byte_list.extend([0xFA, 0x00, 0x3D, 0x00])
     byte_list.extend(generate_text_bytes("\"!!"))
+    byte_list.extend([0xF8, 0x03])  # Player Finish
+    byte_list.extend([0xF8, 0x04])  # PlayerResetScene
+    byte_list.extend([0xF8, 0x06])  # PlayerResetObject
+    byte_list.extend([0xE7, 0x00])  # keyWait = false
+    byte_list.extend([0xF2])  # clearMsg
     return bytearray(byte_list)
 
 def update_mystery_data(rom_data, offset, type, itemID, subItemID, count) -> bytearray:
