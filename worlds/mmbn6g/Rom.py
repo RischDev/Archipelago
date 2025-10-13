@@ -109,9 +109,6 @@ class TextArchive:
             if i == self.scriptCount - 1:
                 next_offset = len(self.uncompressedData)
 
-            if offset == 0x754BD8 and i == 106:
-                print(f"{''.join('{:02x} '.format(byte) for byte in self.uncompressedData[start_offset:next_offset])}")
-
             if start_offset != next_offset:
                 message_bytes = list(self.uncompressedData[start_offset:next_offset])
                 message = ArchiveScript(i, message_bytes)

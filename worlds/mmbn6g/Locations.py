@@ -366,6 +366,24 @@ graveyard_locations = {
     LocationName.Graveyard_PMD_2
 }
 
+ex_boss_locations = {
+    LocationName.BlastMan_EX,
+    LocationName.DiveMan_EX,
+    LocationName.CircusMan_EX,
+    LocationName.JudgeMan_EX,
+    LocationName.ElementMan_EX,
+    LocationName.Colonel_EX
+}
+
+sp_boss_locations = {
+    LocationName.BlastMan_SP,
+    LocationName.DiveMan_SP,
+    LocationName.CircusMan_SP,
+    LocationName.JudgeMan_SP,
+    LocationName.ElementMan_SP,
+    LocationName.Colonel_SP
+}
+
 location_groups: typing.Dict[str, typing.Set[str]] = {
     "BMDs": {loc.name for loc in bmds},
     "PMDs": {loc.name for loc in pmds},
