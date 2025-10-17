@@ -180,7 +180,7 @@ class TextArchive:
             for message_index in range(0, len(script.messageBoxes)):
                 oldbytes = self.scripts[script_index].messageBoxes[message_index]
                 for i in range(0, len(oldbytes)-1):
-                    if oldbytes[i] == 0x68 and oldbytes[i+1] == 0x68:
+                    if oldbytes[i] == 0x69 and oldbytes[i+1] == 0x69:
                         oldbytes[i:i+2] = item_text_bytes
                         self.text_changed = True
 
@@ -189,7 +189,7 @@ class TextArchive:
                             oldbytes.extend(next_message_bytes)
                             # TODO append end message nextline etc.
                             # I think this is "wait for button press" then "clearmessage"
-                            oldbytes.extend([0xE0, 0x00, 0xF2])
+                            oldbytes.extend([0xE7, 0x00, 0xF2])
                         self.scripts[script_index].messageBoxes[message_index] = oldbytes
 
 

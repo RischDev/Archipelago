@@ -236,13 +236,13 @@ class MMBN6World(World):
         add_rule(self.multiworld.get_location(LocationName.ACDC_Area_BMD_2, self.player), has_www_id)
 
         # Set Rush Food requirements. For now, this just requires Sky Town access
-        def has_press(state):
+        def has_rush_food(state):
             return state.has(ItemName.Umbrella, self.player)
 
-        add_rule(self.multiworld.get_location(LocationName.Green_Area_2_BMD_2, self.player), has_press)
-        add_rule(self.multiworld.get_location(LocationName.Sky_Area_1_BMD_2, self.player), has_press)
-        add_rule(self.multiworld.get_location(LocationName.ACDC_Area_BMD_1, self.player), has_press)
-        add_rule(self.multiworld.get_location(LocationName.Undernet_0_Heel_Navi, self.player), has_press)
+        add_rule(self.multiworld.get_location(LocationName.Green_Area_2_BMD_2, self.player), has_rush_food)
+        add_rule(self.multiworld.get_location(LocationName.Sky_Area_1_BMD_2, self.player), has_rush_food)
+        add_rule(self.multiworld.get_location(LocationName.ACDC_Area_BMD_1, self.player), has_rush_food)
+        add_rule(self.multiworld.get_location(LocationName.Undernet_0_Heel_Navi, self.player), has_rush_food)
 
         # Rush Food requirement, but also blocked by a Tree
         self.multiworld.get_location(LocationName.Undernet_Zero_BMD_1, self.player).access_rule = \
@@ -620,18 +620,18 @@ class MMBN6World(World):
             lambda state: state.has(ItemName.AuraHed1_B, self.player)
         self.multiworld.get_location(LocationName.Class_1_2_EnergBom_K_Trade, self.player).access_rule = \
             lambda state: state.has(ItemName.EnergBom_K, self.player)
-        # For now, the trade sequence needs to be done in order.
         self.multiworld.get_location(LocationName.Aquarium_DublShot_C_Trade, self.player).access_rule = \
-            lambda state: state.has_all({ItemName.EnergBom_K, ItemName.DublShot_C}, self.player)
+            lambda state: state.has(ItemName.DublShot_C, self.player)
         self.multiworld.get_location(LocationName.WatrMchn_HiBoomer_V_Trade, self.player).access_rule = \
-            lambda state: state.has_all({ItemName.EnergBom_K, ItemName.DublShot_C, ItemName.HiBoomer_V}, self.player)
+            lambda state: state.has(ItemName.HiBoomer_V, self.player)
         self.multiworld.get_location(LocationName.Sky_GrabRvng_I_Trade, self.player).access_rule = \
-            lambda state: state.has_all(
-                {ItemName.EnergBom_K, ItemName.DublShot_C, ItemName.HiBoomer_V, ItemName.GrabRvng_I}, self.player)
+            lambda state: state.has(ItemName.GrabRvng_I, self.player)
         self.multiworld.get_location(LocationName.ACDC_BigBomb_O_Trade, self.player).access_rule = \
-            lambda state: state.has_all(
-                {ItemName.EnergBom_K, ItemName.DublShot_C, ItemName.HiBoomer_V, ItemName.GrabRvng_I,
-                 ItemName.BigBomb_O}, self.player)
+            lambda state: state.has(ItemName.BigBomb_O, self.player)
+
+        # For now, Green Quiz isn't enabled until after Aquarium Quiz. Add a rule so that this logic doesn't cause issues
+        self.multiworld.get_location(LocationName.Green_Quiz_King, self.player).access_rule = \
+            lambda state: state.has(ItemName.Fish, self.player)
 
         # Set Number Traders
 
@@ -808,7 +808,11 @@ class MMBN6World(World):
                         # Full item hinting
                         else:
                             owners_name = "Your" if item.recipient == 'Myself' else item.recipient + "'s"
-                            long_item_text = f"It's {owners_name} \n\"{item.itemName}\"!!"
+                            if item.recipient == "Myself":
+                                long_item_text = f"It's {owners_name} \n\"{item.itemName}\"!!"
+                            else:
+                                # To keep things consistent, only specify "AP Item" in game
+                                long_item_text = f"It's {owners_name} \n\"AP Item\"!!"
 
                         rom.insert_hint_text(location_data, item_name_text, long_item_text)
 
