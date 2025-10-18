@@ -282,7 +282,7 @@ class LocalRom:
 
 class MMBN6DeltaPatch(APDeltaPatch):
     hash = CHECKSUM_GREG
-    game = "MegaMan Battle Network 6: Cybeast Gregar"
+    game = "MegaMan Battle Network 6"
     patch_file_ending = ".apbn6"
     result_file_ending = ".gba"
 
