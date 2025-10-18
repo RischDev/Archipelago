@@ -293,7 +293,7 @@ class MMBN6DeltaPatch(APDeltaPatch):
 
 def get_base_rom_path(file_name: str = "") -> str:
     if not file_name:
-        from worlds.mmbn6g import MMBN6World
+        from worlds.mmbn6 import MMBN6World
         bn6_options = MMBN6World.settings
 
         if bn6_options is None:
