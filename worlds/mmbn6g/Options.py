@@ -8,6 +8,24 @@ class IncludeJobs(DefaultOnToggle):
     """
     display_name = "Include Jobs"
 
+class IncludeGraveyardArea(Toggle):
+    """
+    Whether the Graveyard can contain progression or useful items.
+    """
+    display_name = "Include Graveyard Area"
+
+class IncludeEXBosses(Toggle):
+    """
+    Whether EX Bosses can contain progression or useful items.
+    """
+    display_name = "Include EX Bosses"
+
+class IncludeSPBosses(Toggle):
+    """
+    Whether SP Bosses can contain progression or useful items.
+    """
+    display_name = "Include SP Bosses"
+
 
 class TradeQuestHinting(Choice):
     """
@@ -26,4 +44,7 @@ class TradeQuestHinting(Choice):
 @dataclass
 class MMBN6Options(PerGameCommonOptions):
     include_jobs: IncludeJobs
+    include_graveyard: IncludeGraveyardArea
+    include_ex_bosses: IncludeEXBosses
+    include_sp_bosses: IncludeSPBosses
     trade_quest_hinting: TradeQuestHinting

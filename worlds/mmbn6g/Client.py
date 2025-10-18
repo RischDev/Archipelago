@@ -56,7 +56,7 @@ RAM_ADDRS = {
     "base_hp": (0x480A, 2, "EWRAM"),
     "curr_hp": (0x480C, 2, "EWRAM"),
     "max_hp": (0x480E, 2, "EWRAM"),
-    "reg_mem": (0x47D5, 2, "EWRAM"),
+    "reg_mem": (0x47D5, 1, "EWRAM"),
     # An arbitrary address that isn't used strictly by the game
     # We'll use it to store the index of the last processed remote item
     # (May actually be used somewhere, but I guess we'll find out)
@@ -89,6 +89,7 @@ class MMBN6Client(BizHawkClient):
     player_name: str | None
     seed_verify = False
     sent_hints = []
+    player_slot = -1
 
     def __init__(self) -> None:
         super().__init__()
@@ -128,6 +129,13 @@ class MMBN6Client(BizHawkClient):
     async def game_watcher(self, ctx: "BizHawkClientContext") -> None:
         if ctx.server is None or ctx.server.socket.closed or ctx.slot_data is None:
             return
+
+        # Set player_slot
+        if self.player_slot == -1:
+            for key, slot in ctx.slot_info.items():
+                if slot.name == self.player_name:
+                    self.player_slot = key
+                    break
 
         try:
             # Handle giving the player items
@@ -365,12 +373,15 @@ class MMBN6Client(BizHawkClient):
         # Read all pending receive items and dump into game ram
         for i in range(len(ctx.items_received) - received_index):
             result = False
-            location_id = ctx.items_received[received_index + i].location
-            if location_id in self.location_by_id:
+            slot = ctx.items_received[received_index + i].player
+
+            # If location is from the current players game
+            if slot == self.player_slot:
+                location_id = ctx.items_received[received_index + i].location
                 location = self.location_by_id[location_id]
 
+                # If the location type is not Boss, then we skip receiving the item, as this is handled by the game.
                 if not location.type == LocationType.Boss:
-                    print(f"Skipping local non-Boss location: {location_id}")
                     await write(ctx.bizhawk_ctx, [(
                         RAM_ADDRS["received_index"][0],
                         [(received_index + i + 1) // 0x100, (received_index + i + 1) % 0x100],

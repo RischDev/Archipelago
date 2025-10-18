@@ -200,14 +200,14 @@ overworlds = [
     LocationData(LocationName.School_Mr_Quiz,                     0xB6108E, 0x1EAB, 0x02, LocationType.OverWorld, 0x76C83C,   7, [22]),
     LocationData(LocationName.Aquarium_Quiz_Master,               0xB6108F, 0x1EAC, 0x80, LocationType.OverWorld, 0x777218,   2, [39]),
     LocationData(LocationName.Green_Quiz_King,                    0xB61090, 0x1EAC, 0x20, LocationType.OverWorld, 0x77C55C,  12, [53]),
-    LocationData(LocationName.Central_Barr100_H_Trade,            0xB61091, 0x1EAB, 0x80, LocationType.OverWorld, 0x764B38, 107, [3], True, 0x1EAA, 0x04),
-    LocationData(LocationName.Aquarium_PnlRetrn_star_Trade,       0xB61092, 0x1EAA, 0x02, LocationType.OverWorld, 0x7991F0,   2, [2], True, 0x1EAA, 0x01),
+    LocationData(LocationName.Central_Barr100_H_Trade,            0xB61091, 0x1EAB, 0x80, LocationType.OverWorld, 0x764B38, 107, [3], True, 0x1EAA, 0x01),
+    LocationData(LocationName.Aquarium_PnlRetrn_star_Trade,       0xB61092, 0x1EAA, 0x02, LocationType.OverWorld, 0x7991F0,   2, [2], True, 0x1EAA, 0x04),
     LocationData(LocationName.Green_HolyPnl_S_Trade,              0xB61093, 0x1EAB, 0x08, LocationType.OverWorld, 0x77A888,  52, [2], True, 0x1EAB, 0x10),
     LocationData(LocationName.AirCon_AuraHed1_B_Trade,            0xB61094, 0x1EAB, 0x20, LocationType.OverWorld, 0x79E718,   2, [2], True, 0x1EAB, 0x40),
-    LocationData(LocationName.Class_1_2_EnergBom_K_Trade,         0xB61095, 0x1EAD, 0x80, LocationType.OverWorld, 0x76B554,  10, [1], True, 0x1EAC, 0x01),
-    LocationData(LocationName.Aquarium_DublShot_C_Trade,          0xB61096, 0x1EAD, 0x20, LocationType.OverWorld, 0x773D3C,  10, [1], True, 0x1EAD, 0x40),
-    LocationData(LocationName.WatrMchn_HiBoomer_V_Trade,          0xB61097, 0x1EAD, 0x08, LocationType.OverWorld, 0x79F4DC,   2, [1], True, 0x1EAD, 0x10),
-    LocationData(LocationName.Sky_GrabRvng_I_Trade,               0xB61098, 0x1EAD, 0x02, LocationType.OverWorld, 0x77F4A0,   7, [1], True, 0x1EAD, 0x04),
+    LocationData(LocationName.Class_1_2_EnergBom_K_Trade,         0xB61095, 0x1D32, 0x20, LocationType.OverWorld, 0x76B554,  10, [1], True, 0x1EAC, 0x01),
+    LocationData(LocationName.Aquarium_DublShot_C_Trade,          0xB61096, 0x1D32, 0x10, LocationType.OverWorld, 0x773D3C,  10, [1], True, 0x1EAD, 0x40),
+    LocationData(LocationName.WatrMchn_HiBoomer_V_Trade,          0xB61097, 0x1D32, 0x80, LocationType.OverWorld, 0x79F4DC,   2, [1], True, 0x1EAD, 0x10),
+    LocationData(LocationName.Sky_GrabRvng_I_Trade,               0xB61098, 0x1D31, 0x01, LocationType.OverWorld, 0x77F4A0,   7, [1], True, 0x1EAD, 0x04),
     LocationData(LocationName.ACDC_BigBomb_O_Trade,               0xB61099, 0x1EAE, 0x80, LocationType.OverWorld, 0x798A08,   2, [1], True, 0x1EAD, 0x01),
     LocationData(LocationName.Class_6_1_Grid,                     0xB6109A, 0x1CB8, 0x01, LocationType.OverWorld, 0x755468,   0, [4, 5]),
     LocationData(LocationName.Seaside_Auditorium_Trash_Can,       0xB6109B, 0x1CB9, 0x80, LocationType.OverWorld, 0x758FA0,   3, [2, 3]),
@@ -364,6 +364,24 @@ graveyard_locations = {
     LocationName.Graveyard_BMD_5,
     LocationName.Graveyard_PMD_1,
     LocationName.Graveyard_PMD_2
+}
+
+ex_boss_locations = {
+    LocationName.BlastMan_EX,
+    LocationName.DiveMan_EX,
+    LocationName.CircusMan_EX,
+    LocationName.JudgeMan_EX,
+    LocationName.ElementMan_EX,
+    LocationName.Colonel_EX
+}
+
+sp_boss_locations = {
+    LocationName.BlastMan_SP,
+    LocationName.DiveMan_SP,
+    LocationName.CircusMan_SP,
+    LocationName.JudgeMan_SP,
+    LocationName.ElementMan_SP,
+    LocationName.Colonel_SP
 }
 
 location_groups: typing.Dict[str, typing.Set[str]] = {

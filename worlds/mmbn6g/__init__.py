@@ -10,7 +10,7 @@ from worlds.AutoWorld import WebWorld, World
 from .Rom import MMBN6DeltaPatch, LocalRom, get_base_rom_path
 from .Items import MMBN6Item, ItemData, item_table, all_items, item_frequencies, items_by_id, ItemType, item_groups
 from .Locations import MMBN6Location, all_locations, location_table, location_data_table, \
-    requests, location_groups
+    requests, location_groups, graveyard_locations, ex_boss_locations, sp_boss_locations
 from .Options import MMBN6Options
 from .Regions import regions, RegionName
 from .Names.ItemName import ItemName
@@ -85,6 +85,12 @@ class MMBN6World(World):
         self.excluded_locations = set()
         if not self.options.include_jobs:
             self.excluded_locations |= {request.name for request in requests}
+        if not self.options.include_graveyard:
+            self.excluded_locations |= graveyard_locations
+        if not self.options.include_ex_bosses:
+            self.excluded_locations |= ex_boss_locations
+        if not self.options.include_sp_bosses:
+            self.excluded_locations |= sp_boss_locations
 
     def create_regions(self) -> None:
         """
@@ -230,13 +236,13 @@ class MMBN6World(World):
         add_rule(self.multiworld.get_location(LocationName.ACDC_Area_BMD_2, self.player), has_www_id)
 
         # Set Rush Food requirements. For now, this just requires Sky Town access
-        def has_press(state):
+        def has_rush_food(state):
             return state.has(ItemName.Umbrella, self.player)
 
-        add_rule(self.multiworld.get_location(LocationName.Green_Area_2_BMD_2, self.player), has_press)
-        add_rule(self.multiworld.get_location(LocationName.Sky_Area_1_BMD_2, self.player), has_press)
-        add_rule(self.multiworld.get_location(LocationName.ACDC_Area_BMD_1, self.player), has_press)
-        add_rule(self.multiworld.get_location(LocationName.Undernet_0_Heel_Navi, self.player), has_press)
+        add_rule(self.multiworld.get_location(LocationName.Green_Area_2_BMD_2, self.player), has_rush_food)
+        add_rule(self.multiworld.get_location(LocationName.Sky_Area_1_BMD_2, self.player), has_rush_food)
+        add_rule(self.multiworld.get_location(LocationName.ACDC_Area_BMD_1, self.player), has_rush_food)
+        add_rule(self.multiworld.get_location(LocationName.Undernet_0_Heel_Navi, self.player), has_rush_food)
 
         # Rush Food requirement, but also blocked by a Tree
         self.multiworld.get_location(LocationName.Undernet_Zero_BMD_1, self.player).access_rule = \
@@ -299,10 +305,6 @@ class MMBN6World(World):
             lambda state: \
                 (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or \
                  state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
-        self.multiworld.get_location(LocationName.Sky_Area_1_PMD, self.player).access_rule = \
-            lambda state: \
-                (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or \
-                 state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
         self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
             lambda state: \
                 (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or \
@@ -314,8 +316,70 @@ class MMBN6World(World):
                 state.has(ItemName.EraseCross, self.player) or \
                 state.can_reach_region(RegionName.Undernet, self.player)
 
-        # Set Purple Mystery Data Unlocker access. Since Central has a SubChip shop with Unlockers, this is unneeded for now.
-        # def can_unlock(state): return state.has(ItemName.Unlocker, self.player, 8) # There are 8 PMDs that aren't in one of the above areas
+        # For now, set PMDs to be behind an explore score of 6. Otherwise, PMDs are in logic from the get-go, which
+        # can be frustrating with a lot of zenny requirements.
+        self.multiworld.get_location(LocationName.ACDC_HP_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Aquarium_HP_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Green_HP_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Sky_HP_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Class_6_2_Comp_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Labs_Comp_2_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Punish_Chair_Comp_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Oxygen_Tank_Comp_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Central_Area_3_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Seaside_Area_3_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Green_Area_1_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Underground_1_PMD_1, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Underground_1_PMD_2, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Sky_Area_1_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.ACDC_Area_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Undernet_1_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Undernet_2_PMD, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+
+        # Set EX Bosses to be blocked by explore score to prevent forcing players to fight them right away.
+        self.multiworld.get_location(LocationName.BlastMan_EX, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 4
+        self.multiworld.get_location(LocationName.DiveMan_EX, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 4
+        self.multiworld.get_location(LocationName.CircusMan_EX, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 4
+        self.multiworld.get_location(LocationName.JudgeMan_EX, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 4
+        self.multiworld.get_location(LocationName.CircusMan_EX, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 4
+        self.multiworld.get_location(LocationName.Colonel_EX, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 4
+
+        # Set SP Bosses to be blocked by explore score to prevent forcing players to fight them right away.
+        self.multiworld.get_location(LocationName.BlastMan_SP, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.DiveMan_SP, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.CircusMan_SP, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.JudgeMan_SP, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.CircusMan_SP, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Colonel_SP, self.player).access_rule = \
+            lambda state: self.explore_score(state) > 6
 
         # Get the player's current possible request points based on accessible locations. This determines if a certain rank
         # is achievable to unlock higher star requests.
@@ -493,6 +557,10 @@ class MMBN6World(World):
         self.multiworld.get_location(LocationName.Track_The_Crmnl_3, self.player).access_rule = \
             lambda state: \
                 request_points_possible(state) >= 25
+        # Pipe Comp requires access to Track the Criminal to open up
+        self.multiworld.get_location(LocationName.Pipe_Comp_BMD, self.player).access_rule = \
+            lambda state: \
+                request_points_possible(state) >= 25
         # To do the PA, we assume you get PoisSeed P, and have OrderSys to buy a second one.
         self.multiworld.get_location(LocationName.Self_Research, self.player).access_rule = \
             lambda state: \
@@ -561,9 +629,13 @@ class MMBN6World(World):
         self.multiworld.get_location(LocationName.ACDC_BigBomb_O_Trade, self.player).access_rule = \
             lambda state: state.has(ItemName.BigBomb_O, self.player)
 
+        # For now, Green Quiz isn't enabled until after Aquarium Quiz. Add a rule so that this logic doesn't cause issues
+        self.multiworld.get_location(LocationName.Green_Quiz_King, self.player).access_rule = \
+            lambda state: state.has(ItemName.Fish, self.player)
+
         # Set Number Traders
 
-        # The first 5 are considered cheap enough to grind for in Central. Central 2 GMDs can drop 600z.
+        # The first 5 are considered cheap enough to grind for in Central. Robo Control 2 GMDs can drop 450-1200z.
         self.multiworld.get_location(LocationName.Lotto_Code_06, self.player).access_rule = \
             lambda state: self.explore_score(state) > 2
         self.multiworld.get_location(LocationName.Lotto_Code_07, self.player).access_rule = \
@@ -575,15 +647,15 @@ class MMBN6World(World):
         self.multiworld.get_location(LocationName.Lotto_Code_10, self.player).access_rule = \
             lambda state: self.explore_score(state) > 2
         self.multiworld.get_location(LocationName.Lotto_Code_11, self.player).access_rule = \
-            lambda state: self.explore_score(state) > 2
+            lambda state: self.explore_score(state) > 4
         self.multiworld.get_location(LocationName.Lotto_Code_12, self.player).access_rule = \
-            lambda state: self.explore_score(state) > 2
+            lambda state: self.explore_score(state) > 4
         self.multiworld.get_location(LocationName.Lotto_Code_13, self.player).access_rule = \
-            lambda state: self.explore_score(state) > 2
+            lambda state: self.explore_score(state) > 4
         self.multiworld.get_location(LocationName.Lotto_Code_14, self.player).access_rule = \
-            lambda state: self.explore_score(state) > 2
+            lambda state: self.explore_score(state) > 4
         self.multiworld.get_location(LocationName.Lotto_Code_15, self.player).access_rule = \
-            lambda state: self.explore_score(state) > 2
+            lambda state: self.explore_score(state) > 4
 
         # After the first 15, require Millions logically.
         self.multiworld.get_location(LocationName.Lotto_Code_16, self.player).access_rule = \
@@ -736,7 +808,11 @@ class MMBN6World(World):
                         # Full item hinting
                         else:
                             owners_name = "Your" if item.recipient == 'Myself' else item.recipient + "'s"
-                            long_item_text = f"It's {owners_name} \n\"{item.itemName}\"!!"
+                            if item.recipient == "Myself":
+                                long_item_text = f"It's {owners_name} \n\"{item.itemName}\"!!"
+                            else:
+                                # To keep things consistent, only specify "AP Item" in game
+                                long_item_text = f"It's {owners_name} \n\"AP Item\"!!"
 
                         rom.insert_hint_text(location_data, item_name_text, long_item_text)
 

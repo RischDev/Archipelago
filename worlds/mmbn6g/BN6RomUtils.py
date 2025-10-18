@@ -177,7 +177,7 @@ def generate_external_item_message(item_name, item_recipient) -> bytearray:
     byte_list = [0xF5, 0x01]  # Hide Mugshot
     byte_list.extend([0xE8, 0x00])  # OpenMsg
     byte_list.extend([0xF8, 0x05, 0x18])  # Play Animation
-    byte_list = [0xF4, 0x00, 0x37, 0x1]
+    byte_list.extend([0xF4, 0x00, 0x3D, 0x1])
     byte_list.extend(generate_text_bytes("Got a \n\""))
     byte_list.extend([0xFA, 0x00, 0x3D, 0x00])
     byte_list.extend(generate_text_bytes("\"!!"))
@@ -281,6 +281,10 @@ def update_mystery_data_external(rom_data, offset) -> bytearray:
     # Set the sub-value. Since we don't need one, use 0xFF
     rom_data[offset + 0x03] = 0xFF
     # Set the item value. For external items, use item ID 61.
-    rom_data[offset + 0x04] = 0x3D
+    bytes = int32_to_byte_list_le(61)
+    rom_data[offset + 0x04] = bytes[0]
+    rom_data[offset + 0x05] = bytes[1]
+    rom_data[offset + 0x06] = bytes[2]
+    rom_data[offset + 0x07] = bytes[3]
 
     return rom_data

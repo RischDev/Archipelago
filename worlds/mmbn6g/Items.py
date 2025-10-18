@@ -455,7 +455,7 @@ zennyList: typing.List[ItemData] = [
     ItemData(0xB610E7, ItemName.zenny_5000z, ItemClassification.filler, ItemType.Zenny, count=5000),
     ItemData(0xB610E8, ItemName.zenny_6000z, ItemClassification.filler, ItemType.Zenny, count=6000),
     ItemData(0xB610E9, ItemName.zenny_8000z, ItemClassification.filler, ItemType.Zenny, count=8000),
-    ItemData(0xB610EA, ItemName.zenny_100000z, ItemClassification.useful, ItemType.Zenny, count=100000)
+    ItemData(0xB610EA, ItemName.zenny_100000z, ItemClassification.progression, ItemType.Zenny, count=100000)
 ]
 
 bugFragList: typing.List[ItemData] = [
