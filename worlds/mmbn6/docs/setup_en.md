@@ -1,4 +1,4 @@
-# Setup Guide for MegaMan Battle Network 3 Archipelago
+# Setup Guide for MegaMan Battle Network 6 Archipelago
 
 ## Important
 
@@ -11,8 +11,8 @@ As we are using Bizhawk, this guide is only applicable to Windows and Linux syst
   - Detailed installation instructions for Bizhawk can be found at the above link.
   - Windows users must run the prereq installer first, which can also be found at the above link.
 - The built-in Archipelago client, which can be installed [here](https://github.com/ArchipelagoMW/Archipelago/releases).
-- A US MegaMan Battle Network 3 Blue Rom. If you have the [MegaMan Battle Network Legacy Collection Vol. 1](https://store.steampowered.com/app/1798010/Mega_Man_Battle_Network_Legacy_Collection_Vol_1/)
-on Steam, you can obtain a copy of this ROM from the game's files, see instructions below.
+- A US MegaMan Battle Network 6: Cybeast Gregar ROM. Note that you cannot use the Legacy Collection ROM for this, and 
+the Archipelago community cannot provide this.
 
 ## Configuring Bizhawk
 
@@ -36,13 +36,15 @@ To do so, we simply have to search any GBA rom we happened to own, right click a
 the list that appears and select the bottom option "Look for another application", then browse to the Bizhawk folder
 and select EmuHawk.exe.
 
-## Extracting a ROM from the Legacy Collection
+## Install the APWorld
 
-The Steam version of the Battle Network Legacy Collection contains unmodified GBA ROMs in its files. You can extract these for use with Archipelago.
-
-1. Open the Legacy Collection Vol. 1's Game Files (Right click on the game in your Library, then open Properties -> Installed Files -> Browse)
-2. Open the file `exe/data/exe3b.dat` in a zip-extracting program such as 7-Zip or WinRAR.
-3. Extract the file `rom_b_e.srl` somewhere and rename it to `Mega Man Battle Network 3 - Blue Version (USA).gba`
+How to use an .apworld: Place the .apworld in your Archipelago/custom_worlds folder, or double-click the .apworld to do 
+so automatically. Use ArchipelagoLauncher.exe to open the Launcher, and click on Generate Template Options to create 
+template yamls for your custom .apworlds. Place the desired player yamls in the Players folder, and customize them as 
+you see fit. Use ArchipelagoGenerate.exe to generate the game. Upload the generated game (in the output folder) on the 
+website at https://archipelago.gg/uploads and create a new room. Refer to the individual game's setup guide for further 
+instruction (usually in the pins for the game's ⁠future-game-design⁠ post or its github). The patch file should be 
+present on the Archipelago website, but it will also be available via the generated output zip folder.
 
 ## Configuring your YAML file
 
@@ -54,8 +56,8 @@ an experience customized for their taste, and different players in the same mult
 
 ### Where do I get a YAML file?
 
-You can customize your options by visiting the 
-[MegaMan Battle Network 3 Player Options Page](/games/MegaMan%20Battle%20Network%203/player-options)
+When you install the apworld, you can generate a template YAML to start with. You can also use the default or expert 
+YAMLs provided on the releases page.
 
 ## Joining a MultiWorld Game
 
@@ -63,20 +65,24 @@ You can customize your options by visiting the
 
 When you join a multiworld game, you will be asked to provide your YAML file to whoever is hosting. Once that is done,
 the host will provide you with either a link to download your data file, or with a zip file containing everyone's data
-files. Your data file should have a `.apbn3` extension.
+files. Your data file should have a `.apbn6` extension.
 
-Double-click on your `.apbn3` file to start your client and start the ROM patch process. Once the process is finished
+Double-click on your `.apbn6` file to start your client and start the ROM patch process. Once the process is finished
 (this can take a while), the client and the emulator will be started automatically (if you associated the extension
 to the emulator as recommended).
+
+You can also use the `Open Patch` option on the Archipelago launcher. As long as the apworld is installed correctly, 
+the `.apbn6` file should be selectable from the file prompt. This should automatically open the Bizhawk Client,
+along with the necessary lua script for the next step.
 
 ### Connect to the Multiserver
 
 Once both the client and the emulator are started, you must connect them. Within the emulator click on the "Tools"
 menu and select "Lua Console". Click the folder button or press Ctrl+O to open a Lua script.
 
-Navigate to your Archipelago install folder and open `data/lua/connector_mmbn3.lua`.  
-**NOTE:** The MMBN3 Lua file depends on other shared Lua files inside of the `data` directory in the Archipelago
-installation. Do not move this Lua file from its default location or you may run into issues connecting.
+Navigate to your Archipelago install folder and open `data/lua/connector_bizhawk_generic.lua`. The emulator and client 
+will eventually connect to each other. The BizHawk Client window should indicate that it connected and recognized 
+Mega Man Battle Network 6.
 
 To connect the client to the multiserver simply put `<address>:<port>` on the textfield on top and press enter (if the
 server uses password, type in the bottom textfield `/connect <address>:<port> [password]`)
