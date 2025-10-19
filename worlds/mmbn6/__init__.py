@@ -186,12 +186,12 @@ class MMBN6World(World):
                 if connection == RegionName.Undernet:
                     entrance.access_rule = lambda state: self.explore_score(state) > 6 and \
                                                          state.can_reach_region(RegionName.Sky_Cyberworld, self.player)
-                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Sky_Cyberworld), entrance)
+                    register_explore_score_indirect_conditions(entrance)
                 if connection == RegionName.Graveyard:
                     entrance.access_rule = lambda state: self.explore_score(state) > 9 and \
                                                          state.can_reach_region(RegionName.Undernet, self.player) and \
                                                          state.has(ItemName.BatKey, self.player)
-                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Undernet), entrance)
+                    register_explore_score_indirect_conditions(entrance)
                 if connection == RegionName.Expo:
                     entrance.access_rule = lambda state: \
                         state.has(ItemName.StampCrd, self.player)

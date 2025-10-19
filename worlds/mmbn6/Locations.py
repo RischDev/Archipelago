@@ -225,7 +225,7 @@ overworlds = [
     LocationData(LocationName.Seaside_Auditorium_Man,             0xB610A7, 0x1EAE, 0x02, LocationType.OverWorld, 0x776A7C,  13, [4]),
     LocationData(LocationName.Aquarium_Comp_1_Navi,               0xB610A8, 0x1EAF, 0x40, LocationType.OverWorld, 0x795DD0,  13, [5]),
     LocationData(LocationName.Green_1_Heel_Navi,                  0xB610A9, 0x1EAC, 0x08, LocationType.OverWorld, 0x78D2A0,  21, [2]),
-    LocationData(LocationName.Undernet_0_Heel_Navi,               0xB610AA, 0x1D32, 0x40, LocationType.OverWorld, 0x794404,  11, [1]),
+    LocationData(LocationName.Undernet_Zero_Heel_Navi,            0xB610AA, 0x1D32, 0x40, LocationType.OverWorld, 0x794404,  11, [1]),
     LocationData(LocationName.Green_Punishment_Room_Prog,         0xB610AB, 0x1EAC, 0x02, LocationType.OverWorld, 0x77C318,   5, [2]),
     LocationData(LocationName.Sky_1_Brown_Navi,                   0xB610AC, 0x1CB9, 0x04, LocationType.OverWorld, 0x7903B4,   6, [2]),
     LocationData(LocationName.Bass,                               0xB610AD, 0x1E89, 0x01, LocationType.OverWorld, 0x7D6DC0,   2, [1]),
