@@ -254,7 +254,7 @@ class MMBN6World(World):
         add_rule(self.multiworld.get_location(LocationName.Green_Area_2_BMD_2, self.player), has_rush_food)
         add_rule(self.multiworld.get_location(LocationName.Sky_Area_1_BMD_2, self.player), has_rush_food)
         add_rule(self.multiworld.get_location(LocationName.ACDC_Area_BMD_1, self.player), has_rush_food)
-        add_rule(self.multiworld.get_location(LocationName.Undernet_0_Heel_Navi, self.player), has_rush_food)
+        add_rule(self.multiworld.get_location(LocationName.Undernet_Zero_Heel_Navi, self.player), has_rush_food)
 
         # Rush Food requirement, but also blocked by a Tree
         self.multiworld.get_location(LocationName.Undernet_Zero_BMD_1, self.player).access_rule = \
@@ -286,8 +286,8 @@ class MMBN6World(World):
             lambda state: \
                 ((state.has(ItemName.EraseCross, self.player) and
                   (state.has(ItemName.Umbrella, self.player) or
-                   state.hasAll({ItemName.VacData, ItemName.KeyData}, self.player) or
-                   state.hasAll({ItemName.VacData, ItemName.ToolPrgm}, self.player))) or
+                   state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
+                   state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))) or
                  state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
         self.multiworld.get_location(LocationName.Undernet_Zero_BMD_2, self.player).access_rule = \
             lambda state: \
@@ -325,8 +325,8 @@ class MMBN6World(World):
                 (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or
                  (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) and
                   (state.has(ItemName.Umbrella, self.player) or
-                   state.hasAll({ItemName.VacData, ItemName.KeyData}, self.player) or
-                   state.hasAll({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
+                   state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
+                   state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
         self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
             lambda state: \
                 (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or
