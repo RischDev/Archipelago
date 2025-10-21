@@ -636,7 +636,7 @@ chips_amount_index: typing.Dict[str, int] = {
 }
 
 # Used to get the itemID when giving a program via the client.
-# How to get: programID * 4, +1 for each possible color (in color order)
+# How to get: (programID * 4) + 144, +1 for each possible color (in color order)
 programs_to_item_id: typing.Dict[str, int] = {
     ItemName.AirShoes: 192,
     ItemName.AntiDmg: 184,
@@ -666,7 +666,7 @@ programs_to_item_id: typing.Dict[str, int] = {
     ItemName.HP_300_Green: 322,
     ItemName.HP_300_Pink: 321,
     ItemName.HP_300_White: 320,
-    ItemName.HP_400_Green: 325,
+    ItemName.HP_400_Green: 326,
     ItemName.HP_400_White: 324,
     ItemName.HP_50_Blue: 310,
     ItemName.HP_50_Pink: 309,
