@@ -376,16 +376,17 @@ class MMBN6Client(BizHawkClient):
             # If location is from the current players game
             if slot == self.player_slot:
                 location_id = ctx.items_received[received_index + i].location
-                location = self.location_by_id[location_id]
+                if location_id in self.location_by_id:
+                    location = self.location_by_id[location_id]
 
-                # If the location type is not Boss, then we skip receiving the item, as this is handled by the game.
-                if not location.type == LocationType.Boss:
-                    await write(ctx.bizhawk_ctx, [(
-                        RAM_ADDRS["received_index"][0],
-                        [(received_index + i + 1) // 0x100, (received_index + i + 1) % 0x100],
-                        "EWRAM",
-                    )])
-                    break
+                    # If the location type is not Boss, then we skip receiving the item, as this is handled by the game.
+                    if not location.type == LocationType.Boss:
+                        await write(ctx.bizhawk_ctx, [(
+                            RAM_ADDRS["received_index"][0],
+                            [(received_index + i + 1) // 0x100, (received_index + i + 1) % 0x100],
+                            "EWRAM",
+                        )])
+                        break
 
             item_id = ctx.items_received[received_index + i].item
             item = self.item_by_id[item_id]
