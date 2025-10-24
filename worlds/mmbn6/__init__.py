@@ -521,10 +521,11 @@ class MMBN6World(World):
         self.multiworld.get_location(LocationName.JuvenileDiv, self.player).access_rule = \
             lambda state: \
                 request_points_possible(state) >= 10
-        # For Somebody Help!, we force the 10,000z option. To prevent heavy grinding, require Millions
+        # For Somebody Help!, we force the 10,000z option. To prevent heavy grinding, require Millions or 100,000z
         self.multiworld.get_location(LocationName.Somebody_Help, self.player).access_rule = \
             lambda state: \
-                state.has(ItemName.Millions, self.player)
+                state.has(ItemName.Millions, self.player) or \
+                state.has(ItemName.zenny_100000z, self.player)
         self.multiworld.get_location(LocationName.Get_The_Chip, self.player).access_rule = \
             lambda state: \
                 state.has(ItemName.DolThdr1_A, self.player)

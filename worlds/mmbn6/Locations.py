@@ -216,7 +216,7 @@ overworlds = [
     LocationData(LocationName.Sky_Air_Tank,                       0xB6109E, 0x1CB8, 0x02, LocationType.OverWorld, 0x75A3F4,   4, [6]),
     LocationData(LocationName.ACDC_Dexs_Door,                     0xB6109F, 0x1CB9, 0x08, LocationType.OverWorld, 0x753814,   5, [3]),
     LocationData(LocationName.Principals_Coffee_Table,            0xB610A0, 0x1CB9, 0x20, LocationType.OverWorld, 0x7573BC,   6, [3, 4]),
-    LocationData(LocationName.Seaside_Pavilion_Waterfall,         0xB610A1, 0x1CB9, 0x10, LocationType.OverWorld, 0x75AF00,   2, [3]),
+    LocationData(LocationName.Seaside_Pavilion_Waterfall,         0xB610A1, 0x1CB9, 0x10, LocationType.OverWorld, 0x75AF00,   2, [3, 4]),
     LocationData(LocationName.Central_1_Net_Cafe,                 0xB610A2, 0x1CAA, 0x08, LocationType.OverWorld, 0x782844, 130, [4]),
     LocationData(LocationName.Green_2_Net_Cafe,                   0xB610A3, 0x1CAB, 0x40, LocationType.OverWorld, 0x78E678,  67, [3]),
     LocationData(LocationName.Sky_1_Net_Cafe,                     0xB610A4, 0x1CAB, 0x04, LocationType.OverWorld, 0x7903B4,  87, [3]),
