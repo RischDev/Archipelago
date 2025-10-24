@@ -64,7 +64,7 @@ RAM_ADDRS = {
     # A set of flags set by early game cutscenes. Since this should be 0x00, we use this to know if RAM can be trusted
     "canary_byte": (0x1D09, 1, "EWRAM"),
     # Contains the victory flag at bit 0x80
-    "gregar_icon_flag": (0x1E48, 1, "EWRAM"),
+    "cybeast_defeated_flag_byte": (0x1E51, 1, "EWRAM"),
     "transformation_flags": (0x1CA4, 1, "EWRAM")
 }
 
@@ -145,7 +145,7 @@ class MMBN6Client(BizHawkClient):
                 RAM_ADDRS["sub_area"],
                 RAM_ADDRS["received_index"],
                 RAM_ADDRS["canary_byte"],
-                RAM_ADDRS["gregar_icon_flag"]
+                RAM_ADDRS["cybeast_defeated_flag_byte"]
             ])
             if read_result is None:
                 return
@@ -155,23 +155,21 @@ class MMBN6Client(BizHawkClient):
             sub_area_id = read_result[2][0]
             received_index = (read_result[3][0] << 8) + read_result[3][1]
             canary_byte = read_result[4][0]
-            gregar_icon_flag = read_result[5][0]
+            cybeast_defeated_flag_byte = read_result[5][0]
 
-            # Do nothing if canary byte is not 0x00
-            if canary_byte == 0x00:
+            # Do nothing if canary byte is not 0x00, and the game state is not 0x04 (controlling Lan/MegaMan)
+            if canary_byte == 0x00 and game_state == 0x04:
                 # Check for goal, Cybeast flag is located at 0x80
-                if not ctx.finished_game and (gregar_icon_flag | 0x80) == gregar_icon_flag:
+                if not ctx.finished_game and (cybeast_defeated_flag_byte | 0x08) == cybeast_defeated_flag_byte:
                     await ctx.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
 
-                # Only process items/locations if the player is in "normal" gameplay
-                if game_state == 0x04:
-                    await self.handle_item_receiving(ctx, received_index)
-                    await self.handle_location_sending(ctx)
-                    await self.handle_scoutable_locations(ctx)
-                    await self.handle_special_items(ctx)
+                await self.handle_item_receiving(ctx, received_index)
+                await self.handle_location_sending(ctx)
+                await self.handle_scoutable_locations(ctx)
+                await self.handle_special_items(ctx)
 
                 # Player moved to a new room that isn't the pause menu. Pause menu `room_area_id` == 0x0000
-                if game_state == 0x04 and (self.main_area != main_area_id or self.sub_area != sub_area_id):
+                if self.main_area != main_area_id or self.sub_area != sub_area_id:
                     await self.handle_room_change(ctx, main_area_id, sub_area_id)
 
         except RequestFailedError:
@@ -378,16 +376,17 @@ class MMBN6Client(BizHawkClient):
             # If location is from the current players game
             if slot == self.player_slot:
                 location_id = ctx.items_received[received_index + i].location
-                location = self.location_by_id[location_id]
+                if location_id in self.location_by_id:
+                    location = self.location_by_id[location_id]
 
-                # If the location type is not Boss, then we skip receiving the item, as this is handled by the game.
-                if not location.type == LocationType.Boss:
-                    await write(ctx.bizhawk_ctx, [(
-                        RAM_ADDRS["received_index"][0],
-                        [(received_index + i + 1) // 0x100, (received_index + i + 1) % 0x100],
-                        "EWRAM",
-                    )])
-                    break
+                    # If the location type is not Boss, then we skip receiving the item, as this is handled by the game.
+                    if not location.type == LocationType.Boss:
+                        await write(ctx.bizhawk_ctx, [(
+                            RAM_ADDRS["received_index"][0],
+                            [(received_index + i + 1) // 0x100, (received_index + i + 1) % 0x100],
+                            "EWRAM",
+                        )])
+                        break
 
             item_id = ctx.items_received[received_index + i].item
             item = self.item_by_id[item_id]

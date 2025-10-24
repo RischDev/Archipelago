@@ -205,7 +205,7 @@ class LocationName():
     Seaside_Auditorium_Man = "Seaside Auditorium Man"
     Aquarium_Comp_1_Navi = "Aquarium Comp 1 Navi"
     Green_1_Heel_Navi = "Green 1 Heel Navi"
-    Undernet_0_Heel_Navi = "Undernet 0 Heel Navi"
+    Undernet_Zero_Heel_Navi = "Undernet Zero Heel Navi"
     Green_Punishment_Room_Prog = "Green Punishment Room Prog"
     Sky_1_Brown_Navi = "Sky 1 Brown Navi"
     Bass = "Bass"

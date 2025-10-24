@@ -349,7 +349,7 @@ regions = [
                     LocationName.Undernet_2_BMD,
                     LocationName.Undernet_1_PMD,
                     LocationName.Undernet_2_PMD,
-                    LocationName.Undernet_0_Heel_Navi
+                    LocationName.Undernet_Zero_Heel_Navi
                ]),
     RegionInfo(RegionName.Graveyard,
                [RegionName.Undernet],

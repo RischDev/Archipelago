@@ -165,33 +165,45 @@ class MMBN6World(World):
                     self.multiworld.register_indirect_condition(self.get_region(RegionName.ACDC_Cyberworld), entrance)
                 if connection == RegionName.Seaside_Cyberworld:
                     entrance.access_rule = lambda state: \
-                        state.has(ItemName.ToolPrgm, self.player) or \
+                        (state.can_reach_region(RegionName.Central3_and_Underground, self.player) and
+                         state.has(ItemName.ToolPrgm, self.player)) or \
                         state.can_reach_region(RegionName.Seaside_Overworld, self.player)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Central3_and_Underground),
+                                                                entrance)
                     self.multiworld.register_indirect_condition(self.get_region(RegionName.Seaside_Overworld), entrance)
                 if connection == RegionName.Green_Cyberworld:
                     entrance.access_rule = lambda state: \
-                        state.has(ItemName.CybBrdAx, self.player) or \
+                        (state.can_reach_region(RegionName.Central3_and_Underground, self.player) and
+                         state.has(ItemName.CybBrdAx, self.player)) or \
                         state.can_reach_region(RegionName.Green_Overworld, self.player)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Central3_and_Underground),
+                                                                entrance)
                     self.multiworld.register_indirect_condition(self.get_region(RegionName.Green_Overworld), entrance)
                 if connection == RegionName.Sky_Cyberworld:
                     entrance.access_rule = lambda state: \
-                        state.has(ItemName.VacData, self.player) or \
+                        (state.can_reach_region(RegionName.Central3_and_Underground, self.player) and
+                         state.has(ItemName.VacData, self.player)) or \
                         state.can_reach_region(RegionName.Sky_Overworld, self.player)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Central3_and_Underground),
+                                                                entrance)
                     self.multiworld.register_indirect_condition(self.get_region(RegionName.Sky_Overworld), entrance)
                 if connection == RegionName.ACDC_Cyberworld:
                     entrance.access_rule = lambda state: \
-                        state.has(ItemName.AreaPass, self.player) or \
+                        (state.can_reach_region(RegionName.Central3_and_Underground, self.player) and
+                         state.has(ItemName.AreaPass, self.player)) or \
                         state.can_reach_region(RegionName.ACDC_Overworld, self.player)
+                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Central3_and_Underground),
+                                                                entrance)
                     self.multiworld.register_indirect_condition(self.get_region(RegionName.ACDC_Overworld), entrance)
                 if connection == RegionName.Undernet:
                     entrance.access_rule = lambda state: self.explore_score(state) > 6 and \
                                                          state.can_reach_region(RegionName.Sky_Cyberworld, self.player)
-                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Sky_Cyberworld), entrance)
+                    register_explore_score_indirect_conditions(entrance)
                 if connection == RegionName.Graveyard:
                     entrance.access_rule = lambda state: self.explore_score(state) > 9 and \
                                                          state.can_reach_region(RegionName.Undernet, self.player) and \
                                                          state.has(ItemName.BatKey, self.player)
-                    self.multiworld.register_indirect_condition(self.get_region(RegionName.Undernet), entrance)
+                    register_explore_score_indirect_conditions(entrance)
                 if connection == RegionName.Expo:
                     entrance.access_rule = lambda state: \
                         state.has(ItemName.StampCrd, self.player)
@@ -242,7 +254,7 @@ class MMBN6World(World):
         add_rule(self.multiworld.get_location(LocationName.Green_Area_2_BMD_2, self.player), has_rush_food)
         add_rule(self.multiworld.get_location(LocationName.Sky_Area_1_BMD_2, self.player), has_rush_food)
         add_rule(self.multiworld.get_location(LocationName.ACDC_Area_BMD_1, self.player), has_rush_food)
-        add_rule(self.multiworld.get_location(LocationName.Undernet_0_Heel_Navi, self.player), has_rush_food)
+        add_rule(self.multiworld.get_location(LocationName.Undernet_Zero_Heel_Navi, self.player), has_rush_food)
 
         # Rush Food requirement, but also blocked by a Tree
         self.multiworld.get_location(LocationName.Undernet_Zero_BMD_1, self.player).access_rule = \
@@ -255,66 +267,90 @@ class MMBN6World(World):
         # Fires
         self.multiworld.get_location(LocationName.Sky_Area_2_BMD_3, self.player).access_rule = \
             lambda state: \
-                (state.has(ItemName.HeatCross, self.player) or \
+                (state.has(ItemName.HeatCross, self.player) or
                  state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
+        # ChargeMan requires player to be able to get SkyBanner, or have VacData
         self.multiworld.get_location(LocationName.Underground_2_BMD_2, self.player).access_rule = \
             lambda state: \
-                (state.has(ItemName.HeatCross, self.player) or \
-                 state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
+                (state.has(ItemName.HeatCross, self.player) or
+                 (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) and
+                  (state.has(ItemName.Umbrella, self.player) or state.has(ItemName.VacData, self.player))))
         self.multiworld.get_location(LocationName.Graveyard_BMD_2, self.player).access_rule = \
             lambda state: \
-                (state.has(ItemName.HeatCross, self.player) or \
+                (state.has(ItemName.HeatCross, self.player) or
                  state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
 
         # Geysers
+        # EraseMan requires player to be able to get SkyBanner, or VacData and ToolPrgm
         self.multiworld.get_location(LocationName.Seaside_Area_1_BMD_3, self.player).access_rule = \
             lambda state: \
-                (state.has(ItemName.EraseCross, self.player) or \
+                ((state.has(ItemName.EraseCross, self.player) and
+                  (state.has(ItemName.Umbrella, self.player) or
+                   state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
+                   state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))) or
                  state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
         self.multiworld.get_location(LocationName.Undernet_Zero_BMD_2, self.player).access_rule = \
             lambda state: \
-                (state.has(ItemName.EraseCross, self.player) or \
+                (state.has(ItemName.EraseCross, self.player) or
                  state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
         self.multiworld.get_location(LocationName.Graveyard_PMD_1, self.player).access_rule = \
             lambda state: \
-                (state.has(ItemName.EraseCross, self.player) or \
+                (state.has(ItemName.EraseCross, self.player) or
                  state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
 
         # Trees
         self.multiworld.get_location(LocationName.Green_Area_1_BMD_2, self.player).access_rule = \
             lambda state: \
-                (state.has(ItemName.HeatCross, self.player) or \
+                (state.has(ItemName.HeatCross, self.player) or
                  state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
         self.multiworld.get_location(LocationName.Sky_1_Brown_Navi, self.player).access_rule = \
             lambda state: \
-                (state.has(ItemName.HeatCross, self.player) or \
+                (state.has(ItemName.HeatCross, self.player) or
                  state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
         self.multiworld.get_location(LocationName.Graveyard_BMD_3, self.player).access_rule = \
             lambda state: \
-                (state.has(ItemName.HeatCross, self.player) or \
+                (state.has(ItemName.HeatCross, self.player) or
                  state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
 
         # Cloud
         self.multiworld.get_location(LocationName.Sky_Area_1_PMD, self.player).access_rule = \
             lambda state: \
-                (state.has(ItemName.EraseCross, self.player) or \
+                (state.has(ItemName.EraseCross, self.player) or
                  state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
 
         # Tornado
+        # ChargeMan requires player to be able to get SkyBanner, or VacData and ToolPrgm
         self.multiworld.get_location(LocationName.Seaside_Area_2_BMD_3, self.player).access_rule = \
             lambda state: \
-                (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or \
-                 state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
+                (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or
+                 (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) and
+                  (state.has(ItemName.Umbrella, self.player) or
+                   state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
+                   state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
         self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
             lambda state: \
-                (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or \
+                (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or
                  state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
 
         # Lab Comp 2 requires EraseCross, or access to Undernet
-        self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
+        self.multiworld.get_location(LocationName.Labs_Comp_2_BMD, self.player).access_rule = \
             lambda state: \
-                state.has(ItemName.EraseCross, self.player) or \
-                state.can_reach_region(RegionName.Undernet, self.player)
+                (state.has(ItemName.EraseCross, self.player) or
+                 state.can_reach_region(RegionName.Undernet, self.player))
+        self.multiworld.get_location(LocationName.Labs_Comp_2_PMD, self.player).access_rule = \
+            lambda state: \
+                (state.has(ItemName.EraseCross, self.player) or
+                state.can_reach_region(RegionName.Undernet, self.player))
+
+        # Vending Machine Comp requires ChargeCross, or access to Undernet
+        self.multiworld.get_location(LocationName.Vending_Machine_Comp_BMD_1, self.player).access_rule = \
+            lambda state: \
+                (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) or
+                 state.can_reach_region(RegionName.Undernet, self.player))
+        self.multiworld.get_location(LocationName.Vending_Machine_Comp_BMD_2, self.player).access_rule = \
+            lambda state: \
+                (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) or
+                 state.can_reach_region(RegionName.Undernet, self.player))
 
         # For now, set PMDs to be behind an explore score of 6. Otherwise, PMDs are in logic from the get-go, which
         # can be frustrating with a lot of zenny requirements.
@@ -485,10 +521,11 @@ class MMBN6World(World):
         self.multiworld.get_location(LocationName.JuvenileDiv, self.player).access_rule = \
             lambda state: \
                 request_points_possible(state) >= 10
-        # For Somebody Help!, we force the 10,000z option. To prevent heavy grinding, require Millions
+        # For Somebody Help!, we force the 10,000z option. To prevent heavy grinding, require Millions or 100,000z
         self.multiworld.get_location(LocationName.Somebody_Help, self.player).access_rule = \
             lambda state: \
-                state.has(ItemName.Millions, self.player)
+                state.has(ItemName.Millions, self.player) or \
+                state.has(ItemName.zenny_100000z, self.player)
         self.multiworld.get_location(LocationName.Get_The_Chip, self.player).access_rule = \
             lambda state: \
                 state.has(ItemName.DolThdr1_A, self.player)
