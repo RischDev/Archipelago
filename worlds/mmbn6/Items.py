@@ -122,19 +122,24 @@ keyItemList: typing.List[ItemData] = [
     # Used to unlock Graveyard Area
     # ItemData(0x, ItemName.ScrtMemo,		        ItemClassification.filler,	    ItemType.KeyItem, 	52),  #Job related?
     ItemData(0xB61010, ItemName.HeatCross, ItemClassification.progression, ItemType.KeyItem, 53),
+    ItemData(0xB610EF, ItemName.SpoutCross, ItemClassification.progression, ItemType.KeyItem, 53),
     # Renamed from QuizData
     # ItemData(0x, ItemName.ScrblDat,		        ItemClassification.filler,	    ItemType.KeyItem, 	54),  #Job related?
     ItemData(0xB61011, ItemName.SlashCross, ItemClassification.progression, ItemType.KeyItem, 55),
+    ItemData(0xB610F0, ItemName.TenguCross, ItemClassification.progression, ItemType.KeyItem, 55),
     # Renamed from PngnThnk
     ItemData(0xB61012, ItemName.ElecCross, ItemClassification.progression, ItemType.KeyItem, 56),
+    ItemData(0xB610F1, ItemName.TomahawkCross, ItemClassification.progression, ItemType.KeyItem, 56),
     # Renamed from RefrncBk
     ItemData(0xB61013, ItemName.OrderSys, ItemClassification.progression, ItemType.KeyItem, 57),
     # Renamed QuizBook to be OrderSys
     ItemData(0xB61014, ItemName.EraseCross, ItemClassification.progression, ItemType.KeyItem, 58),
+    ItemData(0xB610F1, ItemName.GroundCross, ItemClassification.progression, ItemType.KeyItem, 58),
     # Renamed from InvteCrd
     # ItemData(0x, ItemName.ThnkULtr,		        ItemClassification.filler,	    ItemType.KeyItem, 	59),  #Job related?
 
     ItemData(0xB61015, ItemName.ChargeCross, ItemClassification.progression, ItemType.KeyItem, 60),
+    ItemData(0xB610F2, ItemName.DustCross, ItemClassification.progression, ItemType.KeyItem, 60),
     # Renamed from SrialDat
     # ItemData(0x, ItemName.SciManul,		        ItemClassification.filler,	    ItemType.KeyItem, 	61),  #Reward for Self Research request, lotto code. Renamed to AP Item
     # ItemData(0x, ItemName.SoulEmbl,		        ItemClassification.filler,	    ItemType.KeyItem, 	62),  #Reward for RodToSoulBtlr! request, lotto code
@@ -496,6 +501,22 @@ item_groups: typing.Dict[str, typing.Set[str]] = {
     "Secret Chips": {loc.itemName for loc in secretChipList},
     "Zenny": {loc.itemName for loc in zennyList},
     "BugFrags": {loc.itemName for loc in bugFragList}
+}
+
+gregar_only_items = {
+    ItemName.HeatCross,
+    ItemName.ElecCross,
+    ItemName.SlashCross,
+    ItemName.EraseCross,
+    ItemName.ChargeCross
+}
+
+falzar_only_items = {
+    ItemName.SpoutCross,
+    ItemName.TomahawkCross,
+    ItemName.TenguCross,
+    ItemName.GroundCross,
+    ItemName.DustCross
 }
 
 all_items: typing.List[

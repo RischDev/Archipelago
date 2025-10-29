@@ -7,14 +7,17 @@ import hashlib
 import bsdiff4
 from .lz10 import gba_decompress, gba_compress
 
-from .BN6RomUtils import ArchiveToReferences, read_u16_le, read_u32_le, int16_to_byte_list_le, int24_to_byte_list_le, \
-    ArchiveToSizeComp, ArchiveToSizeUncomp, generate_item_message, generate_external_item_message, generate_text_bytes, \
+from settings import get_settings
+
+from .BN6RomUtils import ArchiveToReferencesGregar, ArchiveToReferencesFalzar, read_u16_le, read_u32_le, int16_to_byte_list_le, int24_to_byte_list_le, \
+    ArchiveToSizeCompGregar, ArchiveToSizeUncompGregar, ArchiveToSizeCompFalzar, ArchiveToSizeUncompFalzar, generate_item_message, generate_external_item_message, generate_text_bytes, \
     update_mystery_data, update_mystery_data_external
 
 from .Items import ItemType
 from .Locations import LocationType
 
 CHECKSUM_GREG = "5acc75848bb1ffd3d6d8705554ee333d"
+CHECKSUM_FALZ = "1e8c774ba210d1c55113531c7360c737"
 
 
 def list_contains_subsequence(lst, sublist) -> bool:
@@ -79,12 +82,15 @@ class ArchiveScript:
 
 
 class TextArchive:
-    def __init__(self, data, offset, size, compressed=True):
+    def __init__(self, data, offset, size, game_version, compressed=True):
         self.startOffset = offset
         self.compressed = compressed
         self.scripts = {}
         self.scriptCount = 0xFF
-        self.references = ArchiveToReferences[offset]
+        if game_version == "gregar":
+            self.references = ArchiveToReferencesGregar[offset]
+        else:
+            self.references = ArchiveToReferencesFalzar[offset]
         self.unused_indices = []  # A list of places it's okay to inject new scripts
 
         self.text_changed = False
@@ -194,11 +200,19 @@ class TextArchive:
 
 
 class LocalRom:
-    def __init__(self, file, name=None):
+    def __init__(self, game_version, name=None):
         self.name = name
         self.changed_archives = {}
+        self.game_version = game_version
 
-        self.rom_data = bytearray(get_patched_rom_bytes(file))
+        if game_version == "gregar":
+            self.archive_to_size_comp = ArchiveToSizeCompGregar
+            self.archive_to_size_uncomp = ArchiveToSizeUncompGregar
+        else:
+            self.archive_to_size_comp = ArchiveToSizeCompFalzar
+            self.archive_to_size_uncomp = ArchiveToSizeUncompFalzar
+
+        self.rom_data = bytearray(get_patched_rom_bytes(get_base_rom_path(game_version=self.game_version), self.game_version))
 
     def get_data_chunk(self, start_offset, size):
         if start_offset+size > len(self.rom_data):
@@ -222,9 +236,9 @@ class LocalRom:
             if offset in self.changed_archives:
                 archive = self.changed_archives[offset]
             else:
-                is_compressed = offset in ArchiveToSizeComp.keys()
-                size = ArchiveToSizeComp[offset] if is_compressed\
-                    else ArchiveToSizeUncomp[offset]
+                is_compressed = offset in self.archive_to_size_comp.keys()
+                size = self.archive_to_size_comp[offset] if is_compressed\
+                    else self.archive_to_size_uncomp[offset]
                 data = self.get_data_chunk(offset, size)
                 # Check if the archive we want to load has been moved by the patch. This is indicated by a 0xFF 0xFF
                 # as the first two bytes of the chunk
@@ -237,7 +251,7 @@ class LocalRom:
                     size = read_u16_le(new_size_bytes, 0)
                     data = self.get_data_chunk(read_u32_le(new_address_le, 0), size)
 
-                archive = TextArchive(data, offset, size, is_compressed)
+                archive = TextArchive(data, offset, size, self.game_version, is_compressed)
                 self.changed_archives[offset] = archive
 
             if item.type == ItemType.External:
@@ -262,7 +276,7 @@ class LocalRom:
                 archive = self.changed_archives[offset]
             else:
                 # It should be theoretically impossible to call insert_hint_text before actually injecting the item.
-                raise AssertionError("Inserting a hint at a location that doesn't have an item!")
+                raise AssertionError(f"Inserting a hint at a location that doesn't have an item! Location: {location.name}")
             archive.inject_item_text(short_text, long_text)
 
 
@@ -280,26 +294,46 @@ class LocalRom:
             rom.write(self.rom_data)
 
 
-class MMBN6DeltaPatch(APDeltaPatch):
+class MMBN6GregarDeltaPatch(APDeltaPatch):
     hash = CHECKSUM_GREG
     game = "MegaMan Battle Network 6"
-    patch_file_ending = ".apbn6"
+    patch_file_ending = ".apbn6g"
     result_file_ending = ".gba"
 
     @classmethod
     def get_source_data(cls) -> bytes:
-        return get_base_rom_bytes()
+        with open(get_settings().mmbn6_settings.gregar_rom_file, "rb") as infile:
+            base_rom_bytes = bytes(infile.read())
+        return base_rom_bytes
+
+class MMBN6FalzarDeltaPatch(APDeltaPatch):
+    hash = CHECKSUM_FALZ
+    game = "MegaMan Battle Network 6"
+    patch_file_ending = ".apbn6f"
+    result_file_ending = ".gba"
+
+    @classmethod
+    def get_source_data(cls) -> bytes:
+        with open(get_settings().mmbn6_settings.falzar_rom_file, "rb") as infile:
+            base_rom_bytes = bytes(infile.read())
+        return base_rom_bytes
 
 
-def get_base_rom_path(file_name: str = "") -> str:
+def get_base_rom_path(file_name: str = "", game_version: str = "") -> str:
     if not file_name:
         from worlds.mmbn6 import MMBN6World
-        bn6_options = MMBN6World.settings
+        bn6_settings = MMBN6World.settings
 
-        if bn6_options is None:
-            file_name = "Mega Man Battle Network 6 - Cybeast Gregar (USA).gba"
+        if game_version == "gregar":
+            if bn6_settings is None:
+                file_name = "Mega Man Battle Network 6 - Cybeast Gregar (USA).gba"
+            else:
+                file_name = bn6_settings["gregar_rom_file"]
         else:
-            file_name = bn6_options["rom_file"]
+            if bn6_settings is None:
+                file_name = "Mega Man Battle Network 6 - Cybeast Falzar (USA).gba"
+            else:
+                file_name = bn6_settings["falzar_rom_file"]
     if not os.path.exists(file_name):
         file_name = Utils.user_path(file_name)
     return file_name
@@ -313,22 +347,25 @@ def get_base_rom_bytes(file_name: str = "") -> bytes:
 
         basemd5 = hashlib.md5()
         basemd5.update(base_rom_bytes)
-        if CHECKSUM_GREG != basemd5.hexdigest():
-            raise Exception('Supplied Base Rom does not match US GBA Gregar Version.'
+        if CHECKSUM_GREG != basemd5.hexdigest() and CHECKSUM_FALZ != basemd5.hexdigest():
+            raise Exception('Supplied Base Rom does not match US GBA Gregar or US GBA Falzar Version.'
                             'Please provide the correct ROM version')
 
         get_base_rom_bytes.base_rom_bytes = base_rom_bytes
     return base_rom_bytes
 
 
-def get_patched_rom_bytes(file_name: str = "") -> bytes:
+def get_patched_rom_bytes(file_name: str = "", game_version: str = "") -> bytes:
     """
     Gets the patched ROM data generated from applying the ap-patch diff file to the provided ROM.
-    Diff patch generated by https://github.com/RischDev/bn6g-ap-patch
+    Diff patch generated by https://github.com/RischDev/bn6-ap-patch
     Which should contain all changed text banks and assembly code
     """
     import pkgutil
     base_rom_bytes = get_base_rom_bytes(file_name)
-    patch_bytes = pkgutil.get_data(__name__, "data/bn6-ap-patch.bsdiff")
+    if game_version == "gregar":
+        patch_bytes = pkgutil.get_data(__name__, "data/bn6g-ap-patch.bsdiff")
+    else:
+        patch_bytes = pkgutil.get_data(__name__, "data/bn6f-ap-patch.bsdiff")
     patched_rom_bytes = bsdiff4.patch(base_rom_bytes, patch_bytes)
     return patched_rom_bytes

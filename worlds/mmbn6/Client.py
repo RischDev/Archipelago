@@ -63,9 +63,10 @@ RAM_ADDRS = {
     "received_index": (0x1B60, 2, "EWRAM"),
     # A set of flags set by early game cutscenes. Since this should be 0x00, we use this to know if RAM can be trusted
     "canary_byte": (0x1D09, 1, "EWRAM"),
-    # Contains the victory flag at bit 0x80
+    # Contains the victory flag at bit 0x08
     "cybeast_defeated_flag_byte": (0x1E51, 1, "EWRAM"),
-    "transformation_flags": (0x1CA4, 1, "EWRAM")
+    "transformation_flags1": (0x1CA4, 1, "EWRAM"),
+    "transformation_flags2": (0x1CA5, 1, "EWRAM")
 }
 
 SPECIAL_KEY_ITEMS = {
@@ -74,14 +75,21 @@ SPECIAL_KEY_ITEMS = {
     "SlashCross": 55,
     "ElecCross": 56,
     "EraseCross": 58,
-    "ChargeCross": 60
+    "ChargeCross": 60,
+    "SpoutCross": 53,
+    "TenguCross": 55,
+    "TomahawkCross": 56,
+    "GroundCross": 58,
+    "DustCross": 60
 }
 
+gregar_key_items_xor = 0x55
+falzar_key_items_xor = 0x6F
 
 class MMBN6Client(BizHawkClient):
     game = "MegaMan Battle Network 6"
     system = "GBA"
-    patch_suffix = ".apbn6"
+    patch_suffix = (".apbn6g", ".apbn6f")
     location_by_id: dict[int, LocationData]
     item_by_id: dict[int, ItemData]
     main_area: int
@@ -90,6 +98,8 @@ class MMBN6Client(BizHawkClient):
     seed_verify = False
     sent_hints = []
     player_slot = -1
+    key_item_xor = 0x00
+    game_version = ""
 
     def __init__(self) -> None:
         super().__init__()
@@ -103,7 +113,15 @@ class MMBN6Client(BizHawkClient):
             # Check ROM name/patch version
             rom_name_bytes = (await read(ctx.bizhawk_ctx, [ROM_ADDRS["game_identifier"]]))[0]
             rom_name = bytes([byte for byte in rom_name_bytes if byte != 0]).decode("ascii")
-            if rom_name != "MEGAMAN6_G":
+
+            if rom_name == "MEGAMAN6_G":
+                self.key_item_xor = gregar_key_items_xor
+                self.game_version = "gregar"
+            elif rom_name == "MEGAMAN6_F":
+                self.key_item_xor = falzar_key_items_xor
+                self.game_version = "falzar"
+
+            if rom_name != "MEGAMAN6_G" and rom_name != "MEGAMAN6_F":
                 return False
 
         except UnicodeDecodeError:
@@ -203,7 +221,7 @@ class MMBN6Client(BizHawkClient):
         return True
 
     @staticmethod
-    async def give_item(ctx: "BizHawkClientContext", item) -> bool:
+    async def give_item(ctx: "BizHawkClientContext", item, xor) -> bool:
         # First, get the amount of that item we have
         amount = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + item, 1, "EWRAM")])
         # Get the base anticheat value
@@ -220,10 +238,10 @@ class MMBN6Client(BizHawkClient):
         total = 0
         while not write_result:
             # Write to the address if it hasn't changed.
-            # Anticheat mechanism just XORs the base value with 0x55
+            # Anticheat mechanism just XORs the base value with 0x55 or 0x6F, depending on version
             write_result = await guarded_write(ctx.bizhawk_ctx,
                                                [(RAM_ADDRS["key_item_amount_start"][0] + item, [amount[0][0] + 1], "EWRAM"),
-                                                (RAM_ADDRS["key_item_anticheat_value_start"][0] + item, [anticheat_base[0][0] ^ 0x55], "EWRAM")],
+                                                (RAM_ADDRS["key_item_anticheat_value_start"][0] + item, [anticheat_base[0][0] ^ xor], "EWRAM")],
                                                [(RAM_ADDRS["key_item_amount_start"][0] + item, [amount[0][0]], "EWRAM")])
 
             await asyncio.sleep(0.05)
@@ -406,10 +424,10 @@ class MMBN6Client(BizHawkClient):
                     # RegUp3
                     result = await self.give_reg_up(ctx, 3)
                 else:
-                    result = await self.give_item(ctx, item.itemID)
+                    result = await self.give_item(ctx, item.itemID, self.key_item_xor)
             elif item.type == ItemType.Program:
                 # Programs use the same area of memory as key items, but start at itemID 148
-                result = await self.give_item(ctx, programs_to_item_id[item.itemName])
+                result = await self.give_item(ctx, programs_to_item_id[item.itemName], self.key_item_xor)
             elif item.type == ItemType.Zenny:
                 result = await self.change_zenny(ctx, item.count)
             elif item.type == ItemType.BugFrag:
@@ -442,32 +460,80 @@ class MMBN6Client(BizHawkClient):
 
     async def handle_special_items(self, ctx: "BizHawkClientContext") -> None:
         # If we have any of the Cross or BeastOut key items, set the proper flags
-        beastout = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["BeastOut"], 1, "EWRAM")])
-        heatcross = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["HeatCross"], 1, "EWRAM")])
-        slashcross = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["SlashCross"], 1, "EWRAM")])
-        eleccross = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["ElecCross"], 1, "EWRAM")])
-        erasecross = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["EraseCross"], 1, "EWRAM")])
-        chargecross = await read(ctx.bizhawk_ctx, [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["ChargeCross"], 1, "EWRAM")])
+        flag_val1 = await read(ctx.bizhawk_ctx, [RAM_ADDRS["transformation_flags1"]])
+        new_val1 = flag_val1[0][0]
 
-        flag_val = await read(ctx.bizhawk_ctx, [RAM_ADDRS["transformation_flags"]])
-        new_val = flag_val[0][0]
+        flag_val2 = await read(ctx.bizhawk_ctx, [RAM_ADDRS["transformation_flags2"]])
+        new_val2 = flag_val2[0][0]
+
+        beastout = await read(ctx.bizhawk_ctx,
+                              [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["BeastOut"], 1, "EWRAM")])
 
         if beastout[0][0] > 0:
-            new_val = new_val | 0x80
-        if heatcross[0][0] > 0:
-            new_val = new_val | 0x20
-        if slashcross[0][0] > 0:
-            new_val = new_val | 0x08
-        if eleccross[0][0] > 0:
-            new_val = new_val | 0x10
-        if erasecross[0][0] > 0:
-            new_val = new_val | 0x04
-        if chargecross[0][0] > 0:
-            new_val = new_val | 0x02
+            new_val = new_val1 | 0x80
+
+        print(f"Current version: {self.game_version}")
+
+        if self.game_version == "gregar":
+            heatcross = await read(ctx.bizhawk_ctx,
+                                   [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["HeatCross"], 1,
+                                     "EWRAM")])
+            slashcross = await read(ctx.bizhawk_ctx,
+                                    [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["SlashCross"], 1,
+                                      "EWRAM")])
+            eleccross = await read(ctx.bizhawk_ctx,
+                                   [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["ElecCross"], 1,
+                                     "EWRAM")])
+            erasecross = await read(ctx.bizhawk_ctx,
+                                    [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["EraseCross"], 1,
+                                      "EWRAM")])
+            chargecross = await read(ctx.bizhawk_ctx,
+                                     [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["ChargeCross"], 1,
+                                       "EWRAM")])
+
+            if heatcross[0][0] > 0:
+                new_val1 = new_val1 | 0x20
+            if slashcross[0][0] > 0:
+                new_val1 = new_val1 | 0x08
+            if eleccross[0][0] > 0:
+                new_val1 = new_val1 | 0x10
+            if erasecross[0][0] > 0:
+                new_val1 = new_val1 | 0x04
+            if chargecross[0][0] > 0:
+                new_val1 = new_val1 | 0x02
+        else:
+            spoutcross = await read(ctx.bizhawk_ctx,
+                                   [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["SpoutCross"], 1,
+                                     "EWRAM")])
+            tengucross = await read(ctx.bizhawk_ctx,
+                                    [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["TenguCross"], 1,
+                                      "EWRAM")])
+            tomahawkcross = await read(ctx.bizhawk_ctx,
+                                   [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["TomahawkCross"], 1,
+                                     "EWRAM")])
+            groundcross = await read(ctx.bizhawk_ctx,
+                                    [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["GroundCross"], 1,
+                                      "EWRAM")])
+            dustcross = await read(ctx.bizhawk_ctx,
+                                     [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["DustCross"], 1,
+                                       "EWRAM")])
+
+            if spoutcross[0][0] > 0:
+                new_val1 = new_val1 | 0x01
+            if tengucross[0][0] > 0:
+                new_val2 = new_val2 | 0x40
+            if tomahawkcross[0][0] > 0:
+                new_val2 = new_val2 | 0x80
+            if groundcross[0][0] > 0:
+                new_val2 = new_val2 | 0x20
+            if dustcross[0][0] > 0:
+                new_val2 = new_val2 | 0x10
             
-        if not(flag_val[0][0] == new_val):
-            await guarded_write(ctx.bizhawk_ctx,[(RAM_ADDRS["transformation_flags"][0], [new_val], "EWRAM")],
-                                                [(RAM_ADDRS["transformation_flags"][0], flag_val[0], "EWRAM")])
+        if not(flag_val1[0][0] == new_val1) or not(flag_val2[0][0] == new_val2):
+            await guarded_write(ctx.bizhawk_ctx,[(RAM_ADDRS["transformation_flags1"][0], [new_val1], "EWRAM"),
+                                                         (RAM_ADDRS["transformation_flags2"][0], [new_val2], "EWRAM")],
+                                                [(RAM_ADDRS["transformation_flags1"][0], flag_val1[0], "EWRAM"),
+                                                          (RAM_ADDRS["transformation_flags2"][0], flag_val2[0], "EWRAM")])
 
     @staticmethod
     async def check_location_scouted(ctx, location):

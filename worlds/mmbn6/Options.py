@@ -1,6 +1,14 @@
 from dataclasses import dataclass
 from Options import Choice, Range, DefaultOnToggle, Toggle, PerGameCommonOptions
 
+class GameVersion(Choice):
+    """
+    Which version of the game you want to play.
+    """
+    display_name = "Version"
+    option_gregar = 0
+    option_falzar = 1
+    default = 0
 
 class IncludeJobs(DefaultOnToggle):
     """
@@ -43,6 +51,7 @@ class TradeQuestHinting(Choice):
 
 @dataclass
 class MMBN6Options(PerGameCommonOptions):
+    game_version: GameVersion
     include_jobs: IncludeJobs
     include_graveyard: IncludeGraveyardArea
     include_ex_bosses: IncludeEXBosses

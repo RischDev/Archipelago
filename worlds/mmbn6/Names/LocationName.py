@@ -214,6 +214,10 @@ class LocationName():
     SlashMan_Class = "SlashMan Class"
     EraseMan_Class = "EraseMan Class"
     ChargeMan_Class = "ChargeMan Class"
+    TomahawkMan_Class = "TomahawkMan Class"
+    TenguMan_Class = "TenguMan Class"
+    GroundMan_Class = "GroundMan Class"
+    DustMan_Class = "DustMan Class"
 
     ## Requests
     Virus_Deletion = "Request: Virus Deletion"
