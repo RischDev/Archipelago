@@ -178,6 +178,7 @@ falzar_update_addresses: typing.Dict[str, int] = {
     LocationName.Green_Punishment_Room_Prog: 0x77E3DC,
     LocationName.Sky_1_Brown_Navi: 0x792478,
     LocationName.Bass: 0x7D82E4,
+    LocationName.Bass_SP: 0x7D8938,
     LocationName.Talk_To_Mayl: 0x768EEC,
     LocationName.TomahawkMan_Class: 0x7C13B4,
     LocationName.TenguMan_Class: 0x7BC660,

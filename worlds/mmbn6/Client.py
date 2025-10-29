@@ -470,9 +470,7 @@ class MMBN6Client(BizHawkClient):
                               [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["BeastOut"], 1, "EWRAM")])
 
         if beastout[0][0] > 0:
-            new_val = new_val1 | 0x80
-
-        print(f"Current version: {self.game_version}")
+            new_val1 = new_val1 | 0x80
 
         if self.game_version == "gregar":
             heatcross = await read(ctx.bizhawk_ctx,

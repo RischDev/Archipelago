@@ -229,15 +229,16 @@ overworlds = [
     LocationData(LocationName.Green_Punishment_Room_Prog,         0xB610AB, 0x1EAC, 0x02, LocationType.OverWorld, 0x000000,   5, [2]),
     LocationData(LocationName.Sky_1_Brown_Navi,                   0xB610AC, 0x1CB9, 0x04, LocationType.OverWorld, 0x000000,   6, [2]),
     LocationData(LocationName.Bass,                               0xB610AD, 0x1E89, 0x01, LocationType.OverWorld, 0x000000,   2, [1]),
+    LocationData(LocationName.Bass_SP,                            0xB61126, 0x1CF6, 0x80, LocationType.OverWorld, 0x000000,  39, [1]),
     LocationData(LocationName.Talk_To_Mayl,                       0xB610AE, 0x1CC5, 0x20, LocationType.OverWorld, 0x000000,  11, [3]),
     LocationData(LocationName.ElecMan_Class,                      0xB6111E, 0x1DDF, 0x10, LocationType.OverWorld, 0x000000,   5, [0]),
     LocationData(LocationName.SlashMan_Class,                     0xB6111F, 0x1D94, 0x80, LocationType.OverWorld, 0x000000,   1, [0]),
     LocationData(LocationName.EraseMan_Class,                     0xB61120, 0x1E23, 0x04, LocationType.OverWorld, 0x000000,   1, [0]),
     LocationData(LocationName.ChargeMan_Class,                    0xB61121, 0x1E24, 0x40, LocationType.OverWorld, 0x000000,   1, [0]),
-    LocationData(LocationName.TomahawkMan_Class,                  0xB6111E, 0x1DDF, 0x10, LocationType.OverWorld, 0x000000,   3, [0]),
-    LocationData(LocationName.TenguMan_Class,                     0xB6111F, 0x1D94, 0x80, LocationType.OverWorld, 0x000000,   1, [0]),
-    LocationData(LocationName.GroundMan_Class,                    0xB61120, 0x1E23, 0x04, LocationType.OverWorld, 0x000000,   1, [0]),
-    LocationData(LocationName.DustMan_Class,                      0xB61121, 0x1E24, 0x40, LocationType.OverWorld, 0x000000,   1, [0])
+    LocationData(LocationName.TomahawkMan_Class,                  0xB61122, 0x1DDF, 0x10, LocationType.OverWorld, 0x000000,   3, [0]),
+    LocationData(LocationName.TenguMan_Class,                     0xB61123, 0x1D94, 0x80, LocationType.OverWorld, 0x000000,   1, [0]),
+    LocationData(LocationName.GroundMan_Class,                    0xB61124, 0x1E23, 0x04, LocationType.OverWorld, 0x000000,   1, [0]),
+    LocationData(LocationName.DustMan_Class,                      0xB61125, 0x1E24, 0x40, LocationType.OverWorld, 0x000000,   1, [0])
 ]
 
 requests = [
@@ -367,7 +368,8 @@ graveyard_locations = {
     LocationName.Graveyard_BMD_4,
     LocationName.Graveyard_BMD_5,
     LocationName.Graveyard_PMD_1,
-    LocationName.Graveyard_PMD_2
+    LocationName.Graveyard_PMD_2,
+    LocationName.Bass_SP
 }
 
 ex_boss_locations = {

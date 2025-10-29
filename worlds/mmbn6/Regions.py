@@ -364,7 +364,8 @@ regions = [
                     LocationName.Graveyard_BMD_4,
                     LocationName.Graveyard_BMD_5,
                     LocationName.Graveyard_PMD_1,
-                    LocationName.Graveyard_PMD_2
+                    LocationName.Graveyard_PMD_2,
+                    LocationName.Bass_SP
                ]),
     RegionInfo(RegionName.Expo,
                [RegionName.Central_Overworld],

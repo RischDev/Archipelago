@@ -145,6 +145,7 @@ gregar_update_addresses: typing.Dict[str, int] = {
     LocationName.Undernet_2_PMD: 0x0A41D4,
     LocationName.Graveyard_PMD_1: 0x0A4644,
     LocationName.Graveyard_PMD_2: 0x0A4668,
+
     LocationName.School_Mr_Quiz: 0x76C83C,
     LocationName.Aquarium_Quiz_Master: 0x777218,
     LocationName.Green_Quiz_King: 0x77C55C,
@@ -177,11 +178,13 @@ gregar_update_addresses: typing.Dict[str, int] = {
     LocationName.Green_Punishment_Room_Prog: 0x77C318,
     LocationName.Sky_1_Brown_Navi: 0x7903B4,
     LocationName.Bass: 0x7D6DC0,
+    LocationName.Bass_SP: 0x7D7414,
     LocationName.Talk_To_Mayl: 0x766E28,
     LocationName.ElecMan_Class: 0x7BFE50,
     LocationName.SlashMan_Class: 0x7BA78C,
     LocationName.EraseMan_Class: 0x7C9D54,
     LocationName.ChargeMan_Class: 0x7CB584,
+
     LocationName.Virus_Deletion: 0x76A1E4,
     LocationName.Find_Keepsake: 0x764B38,
     LocationName.Errand_Request: 0x76EDFC,
@@ -223,6 +226,7 @@ gregar_update_addresses: typing.Dict[str, int] = {
     LocationName.An_Experiment_2: 0x7755B8,
     LocationName.An_Experiment_3: 0x7755B8,
     LocationName.RoadToSoulBtlr: 0x79A664,
+
     LocationName.Lotto_Code_01: 0x754BD8,
     LocationName.Lotto_Code_02: 0x754BD8,
     LocationName.Lotto_Code_03: 0x754BD8,

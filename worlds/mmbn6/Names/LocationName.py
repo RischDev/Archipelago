@@ -209,6 +209,7 @@ class LocationName():
     Green_Punishment_Room_Prog = "Green Punishment Room Prog"
     Sky_1_Brown_Navi = "Sky 1 Brown Navi"
     Bass = "Bass"
+    Bass_SP = "Bass SP"
     Talk_To_Mayl = "Talk To Mayl"
     ElecMan_Class = "ElecMan Class"
     SlashMan_Class = "SlashMan Class"

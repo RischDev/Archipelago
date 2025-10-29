@@ -348,7 +348,9 @@ chipList: typing.List[ItemData] = [
     ItemData(0xB61097, ItemName.WindRack_star, ItemClassification.filler, ItemType.Chip, 80, chip_code('*')),
     # Virus Battler
     ItemData(0xB61098, ItemName.YoYo_N, ItemClassification.filler, ItemType.Chip, 19, chip_code('N')),  # BMD
-    ItemData(0xB61099, ItemName.YoYo_star, ItemClassification.filler, ItemType.Chip, 19, chip_code('*'))  # BMD
+    ItemData(0xB61099, ItemName.YoYo_star, ItemClassification.filler, ItemType.Chip, 19, chip_code('*')),  # BMD
+    ItemData(0xB610F3, ItemName.Bass_F, ItemClassification.useful, ItemType.Chip, 301, chip_code('F')),  # Bass SP
+    ItemData(0xB610F4, ItemName.BassAnly_F, ItemClassification.useful, ItemType.Chip, 306, chip_code('F'))  # Bass SP
 ]
 
 secretChipList: typing.List[ItemData] = [
@@ -508,7 +510,8 @@ gregar_only_items = {
     ItemName.ElecCross,
     ItemName.SlashCross,
     ItemName.EraseCross,
-    ItemName.ChargeCross
+    ItemName.ChargeCross,
+    ItemName.Bass_F
 }
 
 falzar_only_items = {
@@ -516,7 +519,8 @@ falzar_only_items = {
     ItemName.TomahawkCross,
     ItemName.TenguCross,
     ItemName.GroundCross,
-    ItemName.DustCross
+    ItemName.DustCross,
+    ItemName.BassAnly_F
 }
 
 all_items: typing.List[
@@ -524,7 +528,8 @@ all_items: typing.List[
 item_table: typing.Dict[str, ItemData] = {item.itemName: item for item in all_items}
 items_by_id: typing.Dict[int, ItemData] = {item.code: item for item in all_items}
 
-# Used to get the index in the chip amounts array
+# Used to get the index in the chip amounts array. To calculate: ((ChipID - 1) * 12) + (1 * codeNumber)
+# Codes are in alphabetic order based on the available codes for that chip, 0 indexed
 chips_amount_index: typing.Dict[str, int] = {
     ItemName.AirHocky_M: 589,
     ItemName.AirSpin2_L: 1513,
@@ -537,6 +542,8 @@ chips_amount_index: typing.Dict[str, int] = {
     ItemName.Atk_30_star: 2328,
     ItemName.AuraHed1_B: 1128,
     ItemName.Barr100_H: 2136,
+    ItemName.Bass_F: 3600,
+    ItemName.BassAnly_F: 3660,
     ItemName.BigBomb_O: 2412,
     ItemName.BigBomb_P: 2413,
     ItemName.BlastMan_star: 3073,

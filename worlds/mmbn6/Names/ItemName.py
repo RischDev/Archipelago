@@ -68,6 +68,8 @@ class ItemName():
     Atk_30_star = "Atk+30 *"
     AuraHed1_B = "AuraHed1 B"
     Barr100_H = "Barr100 H"
+    Bass_F = "Bass F"
+    BassAnly_F = "BassAnly F"
     BigBomb_O = "BigBomb O"
     BigBomb_P = "BigBomb P"
     BlastMan_star = "BlastMan *"
