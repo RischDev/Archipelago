@@ -184,6 +184,11 @@ falzar_update_addresses: typing.Dict[str, int] = {
     LocationName.TenguMan_Class: 0x7BC660,
     LocationName.GroundMan_Class: 0x7CC1E4,
     LocationName.DustMan_Class: 0x7CB1C0,
+    LocationName.RoboDog_Comp_Virus_Battler: 0x79DA74,
+    LocationName.Water_Machine_Comp_Virus_Battler: 0x7A15A0,
+    LocationName.Punish_Chair_Comp_Virus_Battler: 0x7A1144,
+    LocationName.Oxygen_Tank_Comp_Virus_Battler: 0x7A3180,
+    LocationName.Central_1_Virus_Battler: 0x784908,
 
     LocationName.Virus_Deletion: 0x76C2A8,
     LocationName.Find_Keepsake: 0x766BFC,

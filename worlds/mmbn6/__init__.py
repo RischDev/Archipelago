@@ -11,7 +11,8 @@ from .Rom import MMBN6GregarDeltaPatch, MMBN6FalzarDeltaPatch, LocalRom, get_bas
 from .Items import MMBN6Item, ItemData, item_table, all_items, item_frequencies, items_by_id, ItemType, item_groups, \
     gregar_only_items, falzar_only_items
 from .Locations import MMBN6Location, all_locations, location_table, location_data_table, \
-    requests, location_groups, graveyard_locations, ex_boss_locations, sp_boss_locations, gregar_only_locs, falzar_only_locs
+    requests, location_groups, graveyard_locations, ex_boss_locations, sp_boss_locations, \
+    virus_battler_locations, gregar_only_locs, falzar_only_locs
 from .GregarLocations import gregar_update_addresses
 from .FalzarLocations import falzar_update_addresses
 from .Options import MMBN6Options, GameVersion
@@ -94,6 +95,8 @@ class MMBN6World(World):
             self.excluded_locations |= ex_boss_locations
         if not self.options.include_sp_bosses:
             self.excluded_locations |= sp_boss_locations
+        if not self.options.include_virus_battler:
+            self.excluded_locations |= virus_battler_locations
 
     def create_regions(self) -> None:
         """
@@ -529,6 +532,19 @@ class MMBN6World(World):
             lambda state: self.explore_score(state) > 6
         self.multiworld.get_location(LocationName.Colonel_SP, self.player).access_rule = \
             lambda state: self.explore_score(state) > 6
+
+        # Set Virus Battler checks to require BtlrCard, and have explore score requirements so that different rare
+        # viruses are accessible.
+        self.multiworld.get_location(LocationName.RoboDog_Comp_Virus_Battler, self.player).access_rule = \
+            lambda state: state.has(ItemName.BtlrCard, self.player) and self.explore_score(state) > 1
+        self.multiworld.get_location(LocationName.Water_Machine_Comp_Virus_Battler, self.player).access_rule = \
+            lambda state: state.has(ItemName.BtlrCard, self.player) and self.explore_score(state) > 3
+        self.multiworld.get_location(LocationName.Punish_Chair_Comp_Virus_Battler, self.player).access_rule = \
+            lambda state: state.has(ItemName.BtlrCard, self.player) and self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Oxygen_Tank_Comp_Virus_Battler, self.player).access_rule = \
+            lambda state: state.has(ItemName.BtlrCard, self.player) and self.explore_score(state) > 8
+        self.multiworld.get_location(LocationName.Central_1_Virus_Battler, self.player).access_rule = \
+            lambda state: state.has(ItemName.BtlrCard, self.player) and self.explore_score(state) > 8
 
         # Get the player's current possible request points based on accessible locations. This determines if a certain rank
         # is achievable to unlock higher star requests.

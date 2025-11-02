@@ -66,7 +66,12 @@ RAM_ADDRS = {
     # Contains the victory flag at bit 0x08
     "cybeast_defeated_flag_byte": (0x1E51, 1, "EWRAM"),
     "transformation_flags1": (0x1CA4, 1, "EWRAM"),
-    "transformation_flags2": (0x1CA5, 1, "EWRAM")
+    "transformation_flags2": (0x1CA5, 1, "EWRAM"),
+    #Virus Battler related flag addresses
+    "virus_battler_machine_flags": (0x1CC2, 1, "EWRAM"),
+    "virus_battler_enabled_flag": (0x1CC3, 1, "EWRAM"),
+    "rare_virus_flags1": (0x1CBA, 1, "EWRAM"),
+    "rare_virus_flags4": (0x1CBD, 1, "EWRAM")
 }
 
 SPECIAL_KEY_ITEMS = {
@@ -80,7 +85,8 @@ SPECIAL_KEY_ITEMS = {
     "TenguCross": 55,
     "TomahawkCross": 56,
     "GroundCross": 58,
-    "DustCross": 60
+    "DustCross": 60,
+    "BtlrCard": 64
 }
 
 gregar_key_items_xor = 0x55
@@ -532,6 +538,45 @@ class MMBN6Client(BizHawkClient):
                                                          (RAM_ADDRS["transformation_flags2"][0], [new_val2], "EWRAM")],
                                                 [(RAM_ADDRS["transformation_flags1"][0], flag_val1[0], "EWRAM"),
                                                           (RAM_ADDRS["transformation_flags2"][0], flag_val2[0], "EWRAM")])
+
+        btlrcard = await read(ctx.bizhawk_ctx,
+                               [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["BtlrCard"], 1,
+                                 "EWRAM")])
+
+        # If we have the BtlrCard, enable the proper flags
+        if btlrcard[0][0] > 0:
+            battler_machine_flags = await read(ctx.bizhawk_ctx, [RAM_ADDRS["virus_battler_machine_flags"]])
+            new_battler_machine_flags = battler_machine_flags[0][0] | 0x0F
+
+            virus_battler_enabled_flag = await read(ctx.bizhawk_ctx, [RAM_ADDRS["virus_battler_enabled_flag"]])
+            new_virus_battler_enabled_flag = virus_battler_enabled_flag[0][0] | 0x80
+
+            # Enable flags for Mettaur and Gunner, which are given by default. This isn't technically required, but doing
+            # it to be safe
+            rare_virus_flags1 = await read(ctx.bizhawk_ctx, [RAM_ADDRS["rare_virus_flags1"]])
+            new_rare_virus_flags1 = rare_virus_flags1[0][0] | 0x01
+
+            rare_virus_flags4 = await read(ctx.bizhawk_ctx, [RAM_ADDRS["rare_virus_flags4"]])
+            new_rare_virus_flags4 = rare_virus_flags4[0][0] | 0x04
+
+            # Try to set flags if the values have changed
+            if (not (battler_machine_flags[0][0] == new_battler_machine_flags) or
+                not (virus_battler_enabled_flag[0][0] == new_virus_battler_enabled_flag) or
+                not (rare_virus_flags1[0][0] == new_rare_virus_flags1) or
+                not (rare_virus_flags4[0][0] == new_rare_virus_flags4)):
+                print("Enabling Virus Battler progs")
+                print(f"{battler_machine_flags[0][0]} -> {new_battler_machine_flags}")
+                print(f"{virus_battler_enabled_flag[0][0]} -> {new_virus_battler_enabled_flag}")
+                print(f"{rare_virus_flags1[0][0]} -> {new_rare_virus_flags1}")
+                print(f"{rare_virus_flags4[0][0]} -> {new_rare_virus_flags4}")
+                await guarded_write(ctx.bizhawk_ctx, [(RAM_ADDRS["virus_battler_machine_flags"][0], [new_battler_machine_flags], "EWRAM"),
+                                                      (RAM_ADDRS["virus_battler_enabled_flag"][0], [new_virus_battler_enabled_flag], "EWRAM"),
+                                                      (RAM_ADDRS["rare_virus_flags1"][0], [new_rare_virus_flags1], "EWRAM"),
+                                                      (RAM_ADDRS["rare_virus_flags4"][0], [new_rare_virus_flags4], "EWRAM")],
+                                    [(RAM_ADDRS["virus_battler_machine_flags"][0], battler_machine_flags[0], "EWRAM"),
+                                     (RAM_ADDRS["virus_battler_enabled_flag"][0], virus_battler_enabled_flag[0], "EWRAM"),
+                                     (RAM_ADDRS["rare_virus_flags1"][0], rare_virus_flags1[0], "EWRAM"),
+                                     (RAM_ADDRS["rare_virus_flags4"][0], rare_virus_flags4[0], "EWRAM")])
 
     @staticmethod
     async def check_location_scouted(ctx, location):

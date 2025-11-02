@@ -184,6 +184,11 @@ gregar_update_addresses: typing.Dict[str, int] = {
     LocationName.SlashMan_Class: 0x7BA78C,
     LocationName.EraseMan_Class: 0x7C9D54,
     LocationName.ChargeMan_Class: 0x7CB584,
+    LocationName.RoboDog_Comp_Virus_Battler: 0x79B9B0,
+    LocationName.Water_Machine_Comp_Virus_Battler: 0x79F4DC,
+    LocationName.Punish_Chair_Comp_Virus_Battler: 0x79F080,
+    LocationName.Oxygen_Tank_Comp_Virus_Battler: 0x7A10BC,
+    LocationName.Central_1_Virus_Battler: 0x782844,
 
     LocationName.Virus_Deletion: 0x76A1E4,
     LocationName.Find_Keepsake: 0x764B38,

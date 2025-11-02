@@ -221,7 +221,7 @@ overworlds = [
     LocationData(LocationName.Green_2_Net_Cafe,                   0xB610A3, 0x1CAB, 0x40, LocationType.OverWorld, 0x000000,  67, [3]),
     LocationData(LocationName.Sky_1_Net_Cafe,                     0xB610A4, 0x1CAB, 0x04, LocationType.OverWorld, 0x000000,  87, [3]),
     LocationData(LocationName.Central_2_Heel_Navi,                0xB610A5, 0x1EAE, 0x10, LocationType.OverWorld, 0x000000,  53, [3, 4]),
-    LocationData(LocationName.Class_1_2_Heel_Navi,                0xB610A6, 0x1CBA, 0x01, LocationType.OverWorld, 0x000000,  11, [2]),
+    LocationData(LocationName.Class_1_2_Heel_Navi,                0xB610A6, 0x1D31, 0x02, LocationType.OverWorld, 0x000000,  11, [2]),
     LocationData(LocationName.Seaside_Auditorium_Man,             0xB610A7, 0x1EAE, 0x02, LocationType.OverWorld, 0x000000,  13, [4]),
     LocationData(LocationName.Aquarium_Comp_1_Navi,               0xB610A8, 0x1EAF, 0x40, LocationType.OverWorld, 0x000000,  13, [5]),
     LocationData(LocationName.Green_1_Heel_Navi,                  0xB610A9, 0x1EAC, 0x08, LocationType.OverWorld, 0x000000,  21, [2]),
@@ -238,7 +238,12 @@ overworlds = [
     LocationData(LocationName.TomahawkMan_Class,                  0xB61122, 0x1DDF, 0x10, LocationType.OverWorld, 0x000000,   3, [0]),
     LocationData(LocationName.TenguMan_Class,                     0xB61123, 0x1D94, 0x80, LocationType.OverWorld, 0x000000,   1, [0]),
     LocationData(LocationName.GroundMan_Class,                    0xB61124, 0x1E23, 0x04, LocationType.OverWorld, 0x000000,   1, [0]),
-    LocationData(LocationName.DustMan_Class,                      0xB61125, 0x1E24, 0x40, LocationType.OverWorld, 0x000000,   1, [0])
+    LocationData(LocationName.DustMan_Class,                      0xB61125, 0x1E24, 0x40, LocationType.OverWorld, 0x000000,   1, [0]),
+    LocationData(LocationName.RoboDog_Comp_Virus_Battler,         0xB61127, 0x1CC5, 0x08, LocationType.OverWorld, 0x000000,  54, [2]),
+    LocationData(LocationName.Water_Machine_Comp_Virus_Battler,   0xB61128, 0x1CC5, 0x04, LocationType.OverWorld, 0x000000,  54, [2]),
+    LocationData(LocationName.Punish_Chair_Comp_Virus_Battler,    0xB61129, 0x1CC5, 0x02, LocationType.OverWorld, 0x000000,  14, [2]),
+    LocationData(LocationName.Oxygen_Tank_Comp_Virus_Battler,     0xB6112A, 0x1CC5, 0x01, LocationType.OverWorld, 0x000000,  14, [2]),
+    LocationData(LocationName.Central_1_Virus_Battler,            0xB6112B, 0x1CC6, 0x80, LocationType.OverWorld, 0x000000,  52, [2])
 ]
 
 requests = [
@@ -388,6 +393,14 @@ sp_boss_locations = {
     LocationName.JudgeMan_SP,
     LocationName.ElementMan_SP,
     LocationName.Colonel_SP
+}
+
+virus_battler_locations = {
+    LocationName.RoboDog_Comp_Virus_Battler,
+    LocationName.Water_Machine_Comp_Virus_Battler,
+    LocationName.Punish_Chair_Comp_Virus_Battler,
+    LocationName.Oxygen_Tank_Comp_Virus_Battler,
+    LocationName.Central_1_Virus_Battler
 }
 
 gregar_only_locs = {

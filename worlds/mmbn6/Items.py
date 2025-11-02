@@ -144,7 +144,7 @@ keyItemList: typing.List[ItemData] = [
     # ItemData(0x, ItemName.SciManul,		        ItemClassification.filler,	    ItemType.KeyItem, 	61),  #Reward for Self Research request, lotto code. Renamed to AP Item
     # ItemData(0x, ItemName.SoulEmbl,		        ItemClassification.filler,	    ItemType.KeyItem, 	62),  #Reward for RodToSoulBtlr! request, lotto code
     # ItemData(0x, ItemName.NaviRuin,		        ItemClassification.filler,	    ItemType.KeyItem, 	63),  #Needed in Where's My Navi request
-    # ItemData(0x, ItemName.BtlrCard,		        ItemClassification.filler,	    ItemType.KeyItem, 	64),  #Unlocks Virus Battler and rare viruses
+    ItemData(0xB610F5, ItemName.BtlrCard,		        ItemClassification.progression,	    ItemType.KeyItem, 	64),  #Unlocks Virus Battler and rare viruses
     # ItemData(0x, ItemName.F.Fries,		            ItemClassification.filler,	    ItemType.KeyItem, 	65),  #Needed in Got a Problem. request
     ItemData(0xB61016, ItemName.CybBrdAx, ItemClassification.progression, ItemType.KeyItem, 66),
     # Used to go from Central 3 to Green Area

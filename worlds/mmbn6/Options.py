@@ -34,6 +34,12 @@ class IncludeSPBosses(Toggle):
     """
     display_name = "Include SP Bosses"
 
+class IncludeVirusBattler(Toggle):
+    """
+    Whether Virus Battler Machines can contain progression or useful items.
+    """
+    display_name = "Include Virus Battler"
+
 
 class TradeQuestHinting(Choice):
     """
@@ -56,4 +62,5 @@ class MMBN6Options(PerGameCommonOptions):
     include_graveyard: IncludeGraveyardArea
     include_ex_bosses: IncludeEXBosses
     include_sp_bosses: IncludeSPBosses
+    include_virus_battler: IncludeVirusBattler
     trade_quest_hinting: TradeQuestHinting

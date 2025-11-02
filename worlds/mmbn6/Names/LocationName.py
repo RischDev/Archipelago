@@ -219,6 +219,11 @@ class LocationName():
     TenguMan_Class = "TenguMan Class"
     GroundMan_Class = "GroundMan Class"
     DustMan_Class = "DustMan Class"
+    RoboDog_Comp_Virus_Battler = "RoboDog Comp Virus Battler"
+    Water_Machine_Comp_Virus_Battler = "Watr Comp Virus Battler"
+    Punish_Chair_Comp_Virus_Battler = "Punish Chair Comp Virus Battler"
+    Oxygen_Tank_Comp_Virus_Battler = "Oxygen Tank Comp Virus Battler"
+    Central_1_Virus_Battler = "Central 1 Virus Battler"
 
     ## Requests
     Virus_Deletion = "Request: Virus Deletion"

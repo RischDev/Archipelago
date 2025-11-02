@@ -27,6 +27,7 @@ class ItemName():
     GroundCross = "GroundCross"
     ChargeCross = "ChargeCross"
     DustCross = "DustCross"
+    BtlrCard = "BtlrCard"
     CybBrdAx = "CybBrdAx"
     WWWID = "WWWID"
     SpinWhit = "SpinWhit"
