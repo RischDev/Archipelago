@@ -219,9 +219,7 @@ class LocalRom:
             print("Attempting to get data chunk beyond the size of the ROM: "+hex(start_offset)+", ROM size ends at: "+hex(len(self.rom_data)))
         return self.rom_data[start_offset:start_offset + size]
 
-    def replace_item(self, location, item):
-        offset = location.update_address
-
+    def replace_item(self, location, offset, item):
         # For Mystery Data, we need to update the Mystery Data table. For everything else, we update the Text Archive.
         if location.type == LocationType.BlueMysteryData or location.type == LocationType.PurpleMysteryData:
             if item.type == ItemType.External:
@@ -262,7 +260,7 @@ class LocalRom:
                                         item_bytes)
 
 
-    def insert_hint_text(self, location, short_text, long_text = ""):
+    def insert_hint_text(self, location, offset, short_text, long_text = ""):
         """
         Replaces the placeholder text in this location's archive with short_text,
         gives another text box for long_text if it's present
@@ -270,7 +268,6 @@ class LocalRom:
 
         # Replace item name placeholders
         if location.inject_name:
-            offset = location.update_address
             # If the archive is already loaded, use that
             if offset in self.changed_archives:
                 archive = self.changed_archives[offset]

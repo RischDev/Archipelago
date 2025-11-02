@@ -947,11 +947,6 @@ class MMBN6World(World):
                 ap_item = location.item
                 item_id = ap_item.code
 
-                if location_name in {LocationName.Central_Barr100_H_Trade, LocationName.Class_1_2_EnergBom_K_Trade, LocationName.Aquarium_DublShot_C_Trade,
-                                     LocationName.Aquarium_PnlRetrn_star_Trade, LocationName.WatrMchn_HiBoomer_V_Trade, LocationName.Green_HolyPnl_S_Trade,
-                                     LocationName.Sky_GrabRvng_I_Trade, LocationName.AirCon_AuraHed1_B_Trade, LocationName.ACDC_BigBomb_O_Trade}:
-                    print(f"Replacing item for {player}'s {location_name} with {location.item}")
-
                 if item_id is not None:
                     if ap_item.player != player or item_id not in items_by_id:
                         item = ItemData(item_id, ap_item.name, ap_item.classification, ItemType.External)
@@ -963,12 +958,14 @@ class MMBN6World(World):
 
                     # Update the address that needs to be changed based on version
                     if game_version == GameVersion.option_gregar and location_name in gregar_update_addresses:
-                        location_data.update_address = gregar_update_addresses[location_name]
+                        offset = gregar_update_addresses[location_name]
                     elif game_version == GameVersion.option_falzar and location_name in falzar_update_addresses:
-                        location_data.update_address = falzar_update_addresses[location_name]
+                        offset = falzar_update_addresses[location_name]
+                    else:
+                        offset = 0x00
 
                     # print("Placing item "+item.itemName+" at location "+location_data.name)
-                    rom.replace_item(location_data, item)
+                    rom.replace_item(location_data, offset, item)
                     if location_data.inject_name:
                         item_name_text = "Item"
                         long_item_text = ""
@@ -1000,7 +997,7 @@ class MMBN6World(World):
                                 # To keep things consistent, only specify "AP Item" in game
                                 long_item_text = f"It's {owners_name} \n\"AP Item\"!!"
 
-                        rom.insert_hint_text(location_data, item_name_text, long_item_text)
+                        rom.insert_hint_text(location_data, offset, item_name_text, long_item_text)
 
             rom.inject_name(world.player_name[player])
 
