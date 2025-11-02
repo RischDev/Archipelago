@@ -197,8 +197,8 @@ pmds = [
 ]
 
 overworlds = [
-    LocationData(LocationName.School_Mr_Quiz,                     0xB6108E, 0x1EAB, 0x02, LocationType.OverWorld, 0x000000,   7, [22]),
-    LocationData(LocationName.Aquarium_Quiz_Master,               0xB6108F, 0x1EAC, 0x80, LocationType.OverWorld, 0x000000,   2, [39]),
+    LocationData(LocationName.School_Mr_Quiz,                     0xB6108E, 0x1D31, 0x08, LocationType.OverWorld, 0x000000,   7, [22]),
+    LocationData(LocationName.Aquarium_Quiz_Master,               0xB6108F, 0x1D31, 0x04, LocationType.OverWorld, 0x000000,   2, [39]),
     LocationData(LocationName.Green_Quiz_King,                    0xB61090, 0x1EAC, 0x20, LocationType.OverWorld, 0x000000,  12, [53]),
     LocationData(LocationName.Central_Barr100_H_Trade,            0xB61091, 0x1EAB, 0x80, LocationType.OverWorld, 0x000000, 107, [3], True, 0x1EAA, 0x01),
     LocationData(LocationName.Aquarium_PnlRetrn_star_Trade,       0xB61092, 0x1EAA, 0x02, LocationType.OverWorld, 0x000000,   2, [2], True, 0x1EAA, 0x04),

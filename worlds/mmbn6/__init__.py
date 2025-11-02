@@ -795,10 +795,6 @@ class MMBN6World(World):
         self.multiworld.get_location(LocationName.ACDC_BigBomb_O_Trade, self.player).access_rule = \
             lambda state: state.has(ItemName.BigBomb_O, self.player)
 
-        # For now, Green Quiz isn't enabled until after Aquarium Quiz. Add a rule so that this logic doesn't cause issues
-        self.multiworld.get_location(LocationName.Green_Quiz_King, self.player).access_rule = \
-            lambda state: state.has(ItemName.Fish, self.player)
-
         # Set Number Traders
 
         # The first 5 are considered cheap enough to grind for in Central. Robo Control 2 GMDs can drop 450-1200z.
