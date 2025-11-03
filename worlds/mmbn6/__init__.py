@@ -242,7 +242,10 @@ class MMBN6World(World):
                 freq = self.item_frequencies.get(item.itemName, 1)
                 filler_items += [item.itemName for _ in range(freq)]
 
-        remaining = len(all_locations) - len(required_items)
+        if self.options.game_version == GameVersion.option_gregar:
+            remaining = len(all_locations) - len(required_items) - len(gregar_only_locs)
+        else:
+            remaining = len(all_locations) - len(required_items) - len(falzar_only_locs)
         for i in range(remaining):
             filler_item_name = self.random.choice(filler_items)
             item = self.create_item(filler_item_name)
@@ -369,104 +372,104 @@ class MMBN6World(World):
                     (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) or
                      state.can_reach_region(RegionName.Undernet, self.player))
 
-            # Set Link Navi requirements (Falzar)
-            if self.options.game_version == GameVersion.option_falzar:
-                # GroundMan's class requires VacData to reach Central 2
-                self.multiworld.get_location(LocationName.GroundMan_Class, self.player).access_rule = \
-                    lambda state: state.has(ItemName.VacData, self.player)
+        # Set Link Navi requirements (Falzar)
+        if self.options.game_version == GameVersion.option_falzar:
+            # GroundMan's class requires VacData to reach Central 2
+            self.multiworld.get_location(LocationName.GroundMan_Class, self.player).access_rule = \
+                lambda state: state.has(ItemName.VacData, self.player)
 
-                # Rush Food requirement, but also blocked by a Tree
-                self.multiworld.get_location(LocationName.Undernet_Zero_BMD_1, self.player).access_rule = \
-                    lambda state: \
-                        state.has(ItemName.Umbrella, self.player) and \
-                        (state.has(ItemName.GroundCross, self.player) or \
-                         state.has(ItemName.TomahawkCross, self.player))
+            # Rush Food requirement, but also blocked by a Tree
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_1, self.player).access_rule = \
+                lambda state: \
+                    state.has(ItemName.Umbrella, self.player) and \
+                    (state.has(ItemName.GroundCross, self.player) or \
+                     state.has(ItemName.TomahawkCross, self.player))
 
-                # Fires
-                self.multiworld.get_location(LocationName.Sky_Area_2_BMD_3, self.player).access_rule = \
-                    lambda state: \
-                        (state.has(ItemName.SpoutCross, self.player) or
-                         state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player))
-                self.multiworld.get_location(LocationName.Underground_2_BMD_2, self.player).access_rule = \
-                    lambda state: \
-                        (state.has(ItemName.SpoutCross, self.player) or
-                         state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player))
-                self.multiworld.get_location(LocationName.Graveyard_BMD_2, self.player).access_rule = \
-                    lambda state: \
-                        (state.has(ItemName.SpoutCross, self.player) or
-                         state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player))
+            # Fires
+            self.multiworld.get_location(LocationName.Sky_Area_2_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.SpoutCross, self.player) or
+                     state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player))
+            self.multiworld.get_location(LocationName.Underground_2_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.SpoutCross, self.player) or
+                     state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player))
+            self.multiworld.get_location(LocationName.Graveyard_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.SpoutCross, self.player) or
+                     state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player))
 
-                # Geysers
-                # GroundMan requires player to be able to get SkyBanner, or VacData and ToolPrgm
-                self.multiworld.get_location(LocationName.Seaside_Area_1_BMD_3, self.player).access_rule = \
-                    lambda state: \
-                        (state.has(ItemName.SpoutCross, self.player) or
-                        (state.has(ItemName.GroundCross, self.player) and
-                          (state.has(ItemName.Umbrella, self.player) or
-                           state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
-                           state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
-                self.multiworld.get_location(LocationName.Undernet_Zero_BMD_2, self.player).access_rule = \
-                    lambda state: \
-                        (state.has(ItemName.SpoutCross, self.player) or
-                         state.has(ItemName.GroundCross, ItemName.Umbrella, self.player))
-                self.multiworld.get_location(LocationName.Graveyard_PMD_1, self.player).access_rule = \
-                    lambda state: \
-                        (state.has(ItemName.SpoutCross, self.player) or
-                         state.has(ItemName.GroundCross, ItemName.Umbrella, self.player))
+            # Geysers
+            # GroundMan requires player to be able to get SkyBanner, or VacData and ToolPrgm
+            self.multiworld.get_location(LocationName.Seaside_Area_1_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.SpoutCross, self.player) or
+                    (state.has(ItemName.GroundCross, self.player) and
+                      (state.has(ItemName.Umbrella, self.player) or
+                       state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
+                       state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.SpoutCross, self.player) or
+                     state.has(ItemName.GroundCross, ItemName.Umbrella, self.player))
+            self.multiworld.get_location(LocationName.Graveyard_PMD_1, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.SpoutCross, self.player) or
+                     state.has(ItemName.GroundCross, ItemName.Umbrella, self.player))
 
-                # Trees
-                self.multiworld.get_location(LocationName.Green_Area_1_BMD_2, self.player).access_rule = \
-                    lambda state: \
-                        (state.has(ItemName.GroundCross, self.player) or
-                         state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
-                self.multiworld.get_location(LocationName.Sky_1_Brown_Navi, self.player).access_rule = \
-                    lambda state: \
-                        (state.has(ItemName.GroundCross, self.player) or
-                         state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
-                self.multiworld.get_location(LocationName.Graveyard_BMD_3, self.player).access_rule = \
-                    lambda state: \
-                        (state.has(ItemName.GroundCross, self.player) or
-                         state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
+            # Trees
+            self.multiworld.get_location(LocationName.Green_Area_1_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.GroundCross, self.player) or
+                     state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
+            self.multiworld.get_location(LocationName.Sky_1_Brown_Navi, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.GroundCross, self.player) or
+                     state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
+            self.multiworld.get_location(LocationName.Graveyard_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.GroundCross, self.player) or
+                     state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
 
-                # Cloud
-                self.multiworld.get_location(LocationName.Sky_Area_1_PMD, self.player).access_rule = \
-                    lambda state: \
-                        (state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player) or
-                         state.has_all({ItemName.DustCross, ItemName.Fish}, self.player))
+            # Cloud
+            self.multiworld.get_location(LocationName.Sky_Area_1_PMD, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player) or
+                     state.has_all({ItemName.DustCross, ItemName.Fish}, self.player))
 
-                # Tornado
-                # DustMan requires player to be able to get SkyBanner, or VacData and ToolPrgm
-                self.multiworld.get_location(LocationName.Seaside_Area_2_BMD_3, self.player).access_rule = \
-                    lambda state: \
-                        (state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player) or
-                         (state.has_all({ItemName.DustCross, ItemName.Fish}, self.player) and
-                          (state.has(ItemName.Umbrella, self.player) or
-                           state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
-                           state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
-                self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
-                    lambda state: \
-                        (state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player) or
-                         state.has_all({ItemName.DustCross, ItemName.Fish}, self.player))
+            # Tornado
+            # DustMan requires player to be able to get SkyBanner, or VacData and ToolPrgm
+            self.multiworld.get_location(LocationName.Seaside_Area_2_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player) or
+                     (state.has_all({ItemName.DustCross, ItemName.Fish}, self.player) and
+                      (state.has(ItemName.Umbrella, self.player) or
+                       state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
+                       state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
+            self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player) or
+                     state.has_all({ItemName.DustCross, ItemName.Fish}, self.player))
 
-                # Lab Comp 2 requires GroundCross, or access to Undernet
-                self.multiworld.get_location(LocationName.Labs_Comp_2_BMD, self.player).access_rule = \
-                    lambda state: \
-                        (state.has(ItemName.GroundCross, self.player) or
-                         state.can_reach_region(RegionName.Undernet, self.player))
-                self.multiworld.get_location(LocationName.Labs_Comp_2_PMD, self.player).access_rule = \
-                    lambda state: \
-                        (state.has(ItemName.GroundCross, self.player) or
-                         state.can_reach_region(RegionName.Undernet, self.player))
+            # Lab Comp 2 requires GroundCross, or access to Undernet
+            self.multiworld.get_location(LocationName.Labs_Comp_2_BMD, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.GroundCross, self.player) or
+                     state.can_reach_region(RegionName.Undernet, self.player))
+            self.multiworld.get_location(LocationName.Labs_Comp_2_PMD, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.GroundCross, self.player) or
+                     state.can_reach_region(RegionName.Undernet, self.player))
 
-                # Vending Machine Comp requires DustCross, or access to Undernet
-                self.multiworld.get_location(LocationName.Vending_Machine_Comp_BMD_1, self.player).access_rule = \
-                    lambda state: \
-                        (state.has_all({ItemName.DustCross, ItemName.Fish}, self.player) or
-                         state.can_reach_region(RegionName.Undernet, self.player))
-                self.multiworld.get_location(LocationName.Vending_Machine_Comp_BMD_2, self.player).access_rule = \
-                    lambda state: \
-                        (state.has_all({ItemName.DustCross, ItemName.Fish}, self.player) or
-                         state.can_reach_region(RegionName.Undernet, self.player))
+            # Vending Machine Comp requires DustCross, or access to Undernet
+            self.multiworld.get_location(LocationName.Vending_Machine_Comp_BMD_1, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.DustCross, ItemName.Fish}, self.player) or
+                     state.can_reach_region(RegionName.Undernet, self.player))
+            self.multiworld.get_location(LocationName.Vending_Machine_Comp_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.DustCross, ItemName.Fish}, self.player) or
+                     state.can_reach_region(RegionName.Undernet, self.player))
 
         # For now, set PMDs to be behind an explore score of 6. Otherwise, PMDs are in logic from the get-go, which
         # can be frustrating with a lot of zenny requirements.
@@ -1025,7 +1028,15 @@ class MMBN6World(World):
         return MMBN6Item(event, ItemClassification.progression, None, self.player)
 
     def fill_slot_data(self):
-        return self.options.as_dict("include_jobs", "trade_quest_hinting")
+        return self.options.as_dict(
+            "game_version",
+            "include_jobs",
+            "include_graveyard",
+            "include_ex_bosses",
+            "include_sp_bosses",
+            "include_virus_battler",
+            "trade_quest_hinting"
+        )
 
     def explore_score(self, state):
         """
