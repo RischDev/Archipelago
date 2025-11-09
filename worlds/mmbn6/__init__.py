@@ -557,6 +557,10 @@ class MMBN6World(World):
         self.multiworld.get_location(LocationName.Central_1_Virus_Battler, self.player).access_rule = \
             lambda state: state.has(ItemName.BtlrCard, self.player) and self.explore_score(state) > 8
 
+        # Bass SP requires defeating Bass first, which means Green Cyberworld access is required.
+        self.multiworld.get_location(LocationName.Bass_SP, self.player).access_rule = \
+            lambda state: state.can_reach_region(RegionName.Green_Cyberworld, self.player)
+
         # Get the player's current possible request points based on accessible locations. This determines if a certain rank
         # is achievable to unlock higher star requests.
         def request_points_possible(state):
@@ -707,7 +711,7 @@ class MMBN6World(World):
                 request_points_possible(state) >= 25
         self.multiworld.get_location(LocationName.Get_The_Bad_Guy, self.player).access_rule = \
             lambda state: \
-                state.has(ItemName.KeyData, self.player) and \
+                state.can_reach_region(RegionName.Central3_and_Underground, self.player) and \
                 request_points_possible(state) >= 25
         self.multiworld.get_location(LocationName.Update_Help, self.player).access_rule = \
             lambda state: \
