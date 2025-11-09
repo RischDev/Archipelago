@@ -7,11 +7,15 @@ from BaseClasses import Item, MultiWorld, Tutorial, ItemClassification, Region, 
 
 from worlds.AutoWorld import WebWorld, World
 
-from .Rom import MMBN6DeltaPatch, LocalRom, get_base_rom_path
-from .Items import MMBN6Item, ItemData, item_table, all_items, item_frequencies, items_by_id, ItemType, item_groups
+from .Rom import MMBN6GregarDeltaPatch, MMBN6FalzarDeltaPatch, LocalRom, get_base_rom_path
+from .Items import MMBN6Item, ItemData, item_table, all_items, item_frequencies, items_by_id, ItemType, item_groups, \
+    gregar_only_items, falzar_only_items
 from .Locations import MMBN6Location, all_locations, location_table, location_data_table, \
-    requests, location_groups, graveyard_locations, ex_boss_locations, sp_boss_locations
-from .Options import MMBN6Options
+    requests, location_groups, graveyard_locations, ex_boss_locations, sp_boss_locations, \
+    virus_battler_locations, gregar_only_locs, falzar_only_locs
+from .GregarLocations import gregar_update_addresses
+from .FalzarLocations import falzar_update_addresses
+from .Options import MMBN6Options, GameVersion
 from .Regions import regions, RegionName
 from .Names.ItemName import ItemName
 from .Names.LocationName import LocationName
@@ -20,21 +24,20 @@ from worlds.generic.Rules import add_rule
 
 
 class MMBN6Settings(settings.Group):
-    class RomFile(settings.UserFilePath):
+    class GregarRomFile(settings.UserFilePath):
         """File name of the MMBN6 Cybeast Gregar US rom"""
         copy_to = "Mega Man Battle Network 6 - Cybeast Gregar.gba"
-        description = "MMBN6 ROM File"
-        md5s = [MMBN6DeltaPatch.hash]
+        description = "MMBN6 Gregar ROM File"
+        md5s = [MMBN6GregarDeltaPatch.hash]
 
-    class RomStart(str):
-        """
-        Set this to false to never autostart a rom (such as after patching),
-                    true  for operating system default program
-        Alternatively, a path to a program to open the .gba file with
-        """
+    class FalzarRomFile(settings.UserFilePath):
+        """File name of the MMBN6 Cybeast Falzar US rom"""
+        copy_to = "Mega Man Battle Network 6 - Cybeast Falzar.gba"
+        description = "MMBN6 Falzar ROM File"
+        md5s = [MMBN6FalzarDeltaPatch.hash]
 
-    rom_file: RomFile = RomFile(RomFile.copy_to)
-    rom_start: RomStart | bool = True
+    gregar_rom_file: GregarRomFile = GregarRomFile(GregarRomFile.copy_to)
+    falzar_rom_file: FalzarRomFile = FalzarRomFile(FalzarRomFile.copy_to)
 
 
 class MMBN6Web(WebWorld):
@@ -61,6 +64,7 @@ class MMBN6World(World):
     game = "MegaMan Battle Network 6"
     options_dataclass = MMBN6Options
     options: MMBN6Options
+    settings_key = "mmbn6_settings"
     settings: typing.ClassVar[MMBN6Settings]
     topology_present = False
 
@@ -91,6 +95,8 @@ class MMBN6World(World):
             self.excluded_locations |= ex_boss_locations
         if not self.options.include_sp_bosses:
             self.excluded_locations |= sp_boss_locations
+        if not self.options.include_virus_battler:
+            self.excluded_locations |= virus_battler_locations
 
     def create_regions(self) -> None:
         """
@@ -105,6 +111,11 @@ class MMBN6World(World):
                 loc = MMBN6Location(self.player, location, self.location_name_to_id.get(location, None), region)
                 if location in self.excluded_locations:
                     loc.progress_type = LocationProgressType.EXCLUDED
+                # Don't include locations from the opposite version
+                if self.options.game_version == GameVersion.option_gregar and location in falzar_only_locs:
+                    continue
+                elif self.options.game_version == GameVersion.option_falzar and location in gregar_only_locs:
+                    continue
                 region.locations.append(loc)
             self.multiworld.regions.append(region)
 
@@ -212,6 +223,11 @@ class MMBN6World(World):
         # First add in all progression and useful items
         required_items = []
         for item in all_items:
+            # Don't include locations from the opposite version
+            if self.options.game_version == GameVersion.option_gregar and item.itemName in falzar_only_items:
+                continue
+            elif self.options.game_version == GameVersion.option_falzar and item.itemName in gregar_only_items:
+                continue
             if item.progression != ItemClassification.filler:
                 freq = self.item_frequencies.get(item.itemName, 1)
                 required_items += [item.itemName for _ in range(freq)]
@@ -226,7 +242,10 @@ class MMBN6World(World):
                 freq = self.item_frequencies.get(item.itemName, 1)
                 filler_items += [item.itemName for _ in range(freq)]
 
-        remaining = len(all_locations) - len(required_items)
+        if self.options.game_version == GameVersion.option_gregar:
+            remaining = len(all_locations) - len(required_items) - len(gregar_only_locs)
+        else:
+            remaining = len(all_locations) - len(required_items) - len(falzar_only_locs)
         for i in range(remaining):
             filler_item_name = self.random.choice(filler_items)
             item = self.create_item(filler_item_name)
@@ -256,101 +275,209 @@ class MMBN6World(World):
         add_rule(self.multiworld.get_location(LocationName.ACDC_Area_BMD_1, self.player), has_rush_food)
         add_rule(self.multiworld.get_location(LocationName.Undernet_Zero_Heel_Navi, self.player), has_rush_food)
 
-        # Rush Food requirement, but also blocked by a Tree
-        self.multiworld.get_location(LocationName.Undernet_Zero_BMD_1, self.player).access_rule = \
-            lambda state: \
-                state.has(ItemName.Umbrella, self.player) and \
-                (state.has(ItemName.HeatCross, self.player) or \
-                 state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
+        # Set Link Navi requirements (Gregar)
+        if self.options.game_version == GameVersion.option_gregar:
+            # Rush Food requirement, but also blocked by a Tree
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_1, self.player).access_rule = \
+                lambda state: \
+                    state.has(ItemName.Umbrella, self.player) and \
+                    (state.has(ItemName.HeatCross, self.player) or \
+                     state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
 
-        # Set Link Navi requirements
-        # Fires
-        self.multiworld.get_location(LocationName.Sky_Area_2_BMD_3, self.player).access_rule = \
-            lambda state: \
-                (state.has(ItemName.HeatCross, self.player) or
-                 state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
-        # ChargeMan requires player to be able to get SkyBanner, or have VacData
-        self.multiworld.get_location(LocationName.Underground_2_BMD_2, self.player).access_rule = \
-            lambda state: \
-                (state.has(ItemName.HeatCross, self.player) or
-                 (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) and
-                  (state.has(ItemName.Umbrella, self.player) or state.has(ItemName.VacData, self.player))))
-        self.multiworld.get_location(LocationName.Graveyard_BMD_2, self.player).access_rule = \
-            lambda state: \
-                (state.has(ItemName.HeatCross, self.player) or
-                 state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
+            # Fires
+            self.multiworld.get_location(LocationName.Sky_Area_2_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.HeatCross, self.player) or
+                     state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
+            # ChargeMan requires player to be able to get SkyBanner, or have VacData
+            self.multiworld.get_location(LocationName.Underground_2_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.HeatCross, self.player) or
+                     (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) and
+                      (state.has(ItemName.Umbrella, self.player) or state.has(ItemName.VacData, self.player))))
+            self.multiworld.get_location(LocationName.Graveyard_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.HeatCross, self.player) or
+                     state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
 
-        # Geysers
-        # EraseMan requires player to be able to get SkyBanner, or VacData and ToolPrgm
-        self.multiworld.get_location(LocationName.Seaside_Area_1_BMD_3, self.player).access_rule = \
-            lambda state: \
-                ((state.has(ItemName.EraseCross, self.player) and
-                  (state.has(ItemName.Umbrella, self.player) or
-                   state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
-                   state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))) or
-                 state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
-        self.multiworld.get_location(LocationName.Undernet_Zero_BMD_2, self.player).access_rule = \
-            lambda state: \
-                (state.has(ItemName.EraseCross, self.player) or
-                 state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
-        self.multiworld.get_location(LocationName.Graveyard_PMD_1, self.player).access_rule = \
-            lambda state: \
-                (state.has(ItemName.EraseCross, self.player) or
-                 state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
+            # Geysers
+            # EraseMan requires player to be able to get SkyBanner, or VacData and ToolPrgm
+            self.multiworld.get_location(LocationName.Seaside_Area_1_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    ((state.has(ItemName.EraseCross, self.player) and
+                      (state.has(ItemName.Umbrella, self.player) or
+                       state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
+                       state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))) or
+                     state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.EraseCross, self.player) or
+                     state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
+            self.multiworld.get_location(LocationName.Graveyard_PMD_1, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.EraseCross, self.player) or
+                     state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
 
-        # Trees
-        self.multiworld.get_location(LocationName.Green_Area_1_BMD_2, self.player).access_rule = \
-            lambda state: \
-                (state.has(ItemName.HeatCross, self.player) or
-                 state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
-        self.multiworld.get_location(LocationName.Sky_1_Brown_Navi, self.player).access_rule = \
-            lambda state: \
-                (state.has(ItemName.HeatCross, self.player) or
-                 state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
-        self.multiworld.get_location(LocationName.Graveyard_BMD_3, self.player).access_rule = \
-            lambda state: \
-                (state.has(ItemName.HeatCross, self.player) or
-                 state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
+            # Trees
+            self.multiworld.get_location(LocationName.Green_Area_1_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.HeatCross, self.player) or
+                     state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
+            self.multiworld.get_location(LocationName.Sky_1_Brown_Navi, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.HeatCross, self.player) or
+                     state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.HeatCross, self.player) or
+                     state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
+            self.multiworld.get_location(LocationName.Graveyard_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.HeatCross, self.player) or
+                     state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
 
-        # Cloud
-        self.multiworld.get_location(LocationName.Sky_Area_1_PMD, self.player).access_rule = \
-            lambda state: \
-                (state.has(ItemName.EraseCross, self.player) or
-                 state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
+            # Cloud
+            self.multiworld.get_location(LocationName.Sky_Area_1_PMD, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.EraseCross, self.player) or
+                     state.has_all({ItemName.ElecCross, ItemName.Umbrella}, self.player))
 
-        # Tornado
-        # ChargeMan requires player to be able to get SkyBanner, or VacData and ToolPrgm
-        self.multiworld.get_location(LocationName.Seaside_Area_2_BMD_3, self.player).access_rule = \
-            lambda state: \
-                (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or
-                 (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) and
-                  (state.has(ItemName.Umbrella, self.player) or
-                   state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
-                   state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
-        self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
-            lambda state: \
-                (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or
-                 state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
+            # Tornado
+            # ChargeMan requires player to be able to get SkyBanner, or VacData and ToolPrgm
+            self.multiworld.get_location(LocationName.Seaside_Area_2_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or
+                     (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) and
+                      (state.has(ItemName.Umbrella, self.player) or
+                       state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
+                       state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
+            self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or
+                     state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
 
-        # Lab Comp 2 requires EraseCross, or access to Undernet
-        self.multiworld.get_location(LocationName.Labs_Comp_2_BMD, self.player).access_rule = \
-            lambda state: \
-                (state.has(ItemName.EraseCross, self.player) or
-                 state.can_reach_region(RegionName.Undernet, self.player))
-        self.multiworld.get_location(LocationName.Labs_Comp_2_PMD, self.player).access_rule = \
-            lambda state: \
-                (state.has(ItemName.EraseCross, self.player) or
-                state.can_reach_region(RegionName.Undernet, self.player))
+            # Lab Comp 2 requires EraseCross, or access to Undernet
+            self.multiworld.get_location(LocationName.Labs_Comp_2_BMD, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.EraseCross, self.player) or
+                     state.can_reach_region(RegionName.Undernet, self.player))
+            self.multiworld.get_location(LocationName.Labs_Comp_2_PMD, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.EraseCross, self.player) or
+                    state.can_reach_region(RegionName.Undernet, self.player))
 
-        # Vending Machine Comp requires ChargeCross, or access to Undernet
-        self.multiworld.get_location(LocationName.Vending_Machine_Comp_BMD_1, self.player).access_rule = \
-            lambda state: \
-                (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) or
-                 state.can_reach_region(RegionName.Undernet, self.player))
-        self.multiworld.get_location(LocationName.Vending_Machine_Comp_BMD_2, self.player).access_rule = \
-            lambda state: \
-                (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) or
-                 state.can_reach_region(RegionName.Undernet, self.player))
+            # Vending Machine Comp requires ChargeCross, or access to Undernet
+            self.multiworld.get_location(LocationName.Vending_Machine_Comp_BMD_1, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) or
+                     state.can_reach_region(RegionName.Undernet, self.player))
+            self.multiworld.get_location(LocationName.Vending_Machine_Comp_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player) or
+                     state.can_reach_region(RegionName.Undernet, self.player))
+
+        # Set Link Navi requirements (Falzar)
+        if self.options.game_version == GameVersion.option_falzar:
+            # GroundMan's class requires VacData to reach Central 2
+            self.multiworld.get_location(LocationName.GroundMan_Class, self.player).access_rule = \
+                lambda state: state.has(ItemName.VacData, self.player)
+
+            # Rush Food requirement, but also blocked by a Tree
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_1, self.player).access_rule = \
+                lambda state: \
+                    state.has(ItemName.Umbrella, self.player) and \
+                    (state.has(ItemName.GroundCross, self.player) or \
+                     state.has(ItemName.TomahawkCross, self.player))
+
+            # Fires
+            self.multiworld.get_location(LocationName.Sky_Area_2_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.SpoutCross, self.player) or
+                     state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player))
+            self.multiworld.get_location(LocationName.Underground_2_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.SpoutCross, self.player) or
+                     state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player))
+            self.multiworld.get_location(LocationName.Graveyard_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.SpoutCross, self.player) or
+                     state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player))
+
+            # Geysers
+            # GroundMan requires player to be able to get SkyBanner, or VacData and ToolPrgm
+            self.multiworld.get_location(LocationName.Seaside_Area_1_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.SpoutCross, self.player) or
+                    (state.has(ItemName.GroundCross, self.player) and
+                      (state.has(ItemName.Umbrella, self.player) or
+                       state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
+                       state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.SpoutCross, self.player) or
+                     state.has(ItemName.GroundCross, self.player))
+            self.multiworld.get_location(LocationName.Graveyard_PMD_1, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.SpoutCross, self.player) or
+                     state.has(ItemName.GroundCross, self.player))
+
+            # Trees
+            self.multiworld.get_location(LocationName.Green_Area_1_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.GroundCross, self.player) or
+                     state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
+            self.multiworld.get_location(LocationName.Sky_1_Brown_Navi, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.GroundCross, self.player) or
+                     state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.GroundCross, self.player) or
+                     state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
+            self.multiworld.get_location(LocationName.Graveyard_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.GroundCross, self.player) or
+                     state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
+
+            # Cloud
+            self.multiworld.get_location(LocationName.Sky_Area_1_PMD, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player) or
+                     state.has_all({ItemName.DustCross, ItemName.Fish}, self.player))
+
+            # Tornado
+            # DustMan requires player to be able to get SkyBanner, or VacData and ToolPrgm
+            self.multiworld.get_location(LocationName.Seaside_Area_2_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player) or
+                     (state.has_all({ItemName.DustCross, ItemName.Fish}, self.player) and
+                      (state.has(ItemName.Umbrella, self.player) or
+                       state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
+                       state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
+            self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player) or
+                     state.has_all({ItemName.DustCross, ItemName.Fish}, self.player))
+
+            # Lab Comp 2 requires GroundCross, or access to Undernet
+            self.multiworld.get_location(LocationName.Labs_Comp_2_BMD, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.GroundCross, self.player) or
+                     state.can_reach_region(RegionName.Undernet, self.player))
+            self.multiworld.get_location(LocationName.Labs_Comp_2_PMD, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.GroundCross, self.player) or
+                     state.can_reach_region(RegionName.Undernet, self.player))
+
+            # Vending Machine Comp requires DustCross, or access to Undernet
+            self.multiworld.get_location(LocationName.Vending_Machine_Comp_BMD_1, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.DustCross, ItemName.Fish}, self.player) or
+                     state.can_reach_region(RegionName.Undernet, self.player))
+            self.multiworld.get_location(LocationName.Vending_Machine_Comp_BMD_2, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.DustCross, ItemName.Fish}, self.player) or
+                     state.can_reach_region(RegionName.Undernet, self.player))
 
         # For now, set PMDs to be behind an explore score of 6. Otherwise, PMDs are in logic from the get-go, which
         # can be frustrating with a lot of zenny requirements.
@@ -416,6 +543,23 @@ class MMBN6World(World):
             lambda state: self.explore_score(state) > 6
         self.multiworld.get_location(LocationName.Colonel_SP, self.player).access_rule = \
             lambda state: self.explore_score(state) > 6
+
+        # Set Virus Battler checks to require BtlrCard, and have explore score requirements so that different rare
+        # viruses are accessible.
+        self.multiworld.get_location(LocationName.RoboDog_Comp_Virus_Battler, self.player).access_rule = \
+            lambda state: state.has(ItemName.BtlrCard, self.player) and self.explore_score(state) > 1
+        self.multiworld.get_location(LocationName.Water_Machine_Comp_Virus_Battler, self.player).access_rule = \
+            lambda state: state.has(ItemName.BtlrCard, self.player) and self.explore_score(state) > 3
+        self.multiworld.get_location(LocationName.Punish_Chair_Comp_Virus_Battler, self.player).access_rule = \
+            lambda state: state.has(ItemName.BtlrCard, self.player) and self.explore_score(state) > 6
+        self.multiworld.get_location(LocationName.Oxygen_Tank_Comp_Virus_Battler, self.player).access_rule = \
+            lambda state: state.has(ItemName.BtlrCard, self.player) and self.explore_score(state) > 8
+        self.multiworld.get_location(LocationName.Central_1_Virus_Battler, self.player).access_rule = \
+            lambda state: state.has(ItemName.BtlrCard, self.player) and self.explore_score(state) > 8
+
+        # Bass SP requires defeating Bass first, which means Green Cyberworld access is required.
+        self.multiworld.get_location(LocationName.Bass_SP, self.player).access_rule = \
+            lambda state: state.can_reach_region(RegionName.Green_Cyberworld, self.player)
 
         # Get the player's current possible request points based on accessible locations. This determines if a certain rank
         # is achievable to unlock higher star requests.
@@ -567,7 +711,7 @@ class MMBN6World(World):
                 request_points_possible(state) >= 25
         self.multiworld.get_location(LocationName.Get_The_Bad_Guy, self.player).access_rule = \
             lambda state: \
-                state.has(ItemName.KeyData, self.player) and \
+                state.can_reach_region(RegionName.Central3_and_Underground, self.player) and \
                 request_points_possible(state) >= 25
         self.multiworld.get_location(LocationName.Update_Help, self.player).access_rule = \
             lambda state: \
@@ -665,10 +809,6 @@ class MMBN6World(World):
             lambda state: state.has(ItemName.GrabRvng_I, self.player)
         self.multiworld.get_location(LocationName.ACDC_BigBomb_O_Trade, self.player).access_rule = \
             lambda state: state.has(ItemName.BigBomb_O, self.player)
-
-        # For now, Green Quiz isn't enabled until after Aquarium Quiz. Add a rule so that this logic doesn't cause issues
-        self.multiworld.get_location(LocationName.Green_Quiz_King, self.player).access_rule = \
-            lambda state: state.has(ItemName.Fish, self.player)
 
         # Set Number Traders
 
@@ -803,13 +943,21 @@ class MMBN6World(World):
         try:
             world = self.multiworld
             player = self.player
+            game_version = self.options.game_version
 
-            rom = LocalRom(get_base_rom_path())
+            rom = LocalRom(game_version=game_version.current_key)
 
             for location_name in location_table.keys():
+                # Skip locations from the opposite version
+                if self.options.game_version == GameVersion.option_gregar and location_name in falzar_only_locs:
+                    continue
+                elif self.options.game_version == GameVersion.option_falzar and location_name in gregar_only_locs:
+                    continue
+
                 location = world.get_location(location_name, player)
                 ap_item = location.item
                 item_id = ap_item.code
+
                 if item_id is not None:
                     if ap_item.player != player or item_id not in items_by_id:
                         item = ItemData(item_id, ap_item.name, ap_item.classification, ItemType.External)
@@ -818,8 +966,17 @@ class MMBN6World(World):
                         item = items_by_id[item_id]
 
                     location_data = location_data_table[location_name]
+
+                    # Update the address that needs to be changed based on version
+                    if game_version == GameVersion.option_gregar and location_name in gregar_update_addresses:
+                        offset = gregar_update_addresses[location_name]
+                    elif game_version == GameVersion.option_falzar and location_name in falzar_update_addresses:
+                        offset = falzar_update_addresses[location_name]
+                    else:
+                        offset = 0x00
+
                     # print("Placing item "+item.itemName+" at location "+location_data.name)
-                    rom.replace_item(location_data, item)
+                    rom.replace_item(location_data, offset, item)
                     if location_data.inject_name:
                         item_name_text = "Item"
                         long_item_text = ""
@@ -851,7 +1008,7 @@ class MMBN6World(World):
                                 # To keep things consistent, only specify "AP Item" in game
                                 long_item_text = f"It's {owners_name} \n\"AP Item\"!!"
 
-                        rom.insert_hint_text(location_data, item_name_text, long_item_text)
+                        rom.insert_hint_text(location_data, offset, item_name_text, long_item_text)
 
             rom.inject_name(world.player_name[player])
 
@@ -860,20 +1017,19 @@ class MMBN6World(World):
             rom.write_changed_rom()
             rom.write_to_file(rompath)
 
-            patch = MMBN6DeltaPatch(os.path.splitext(rompath)[0] + MMBN6DeltaPatch.patch_file_ending, player=player,
+            if self.options.game_version == GameVersion.option_gregar:
+                patch = MMBN6GregarDeltaPatch(os.path.splitext(rompath)[0] + MMBN6GregarDeltaPatch.patch_file_ending, player=player,
                                     player_name=world.player_name[player], patched_path=rompath)
+            else:
+                patch = MMBN6FalzarDeltaPatch(os.path.splitext(rompath)[0] + MMBN6FalzarDeltaPatch.patch_file_ending,
+                                              player=player,
+                                              player_name=world.player_name[player], patched_path=rompath)
             patch.write()
         except:
             raise
         finally:
             if os.path.exists(rompath):
                 os.unlink(rompath)
-
-    @classmethod
-    def stage_assert_generate(cls, multiworld: "MultiWorld") -> None:
-        rom_file = get_base_rom_path()
-        if not os.path.exists(rom_file):
-            raise FileNotFoundError(rom_file)
 
     def create_item(self, name: str) -> "Item":
         item = item_table[name]
@@ -884,7 +1040,15 @@ class MMBN6World(World):
         return MMBN6Item(event, ItemClassification.progression, None, self.player)
 
     def fill_slot_data(self):
-        return self.options.as_dict("include_jobs", "trade_quest_hinting")
+        return self.options.as_dict(
+            "game_version",
+            "include_jobs",
+            "include_graveyard",
+            "include_ex_bosses",
+            "include_sp_bosses",
+            "include_virus_battler",
+            "trade_quest_hinting"
+        )
 
     def explore_score(self, state):
         """

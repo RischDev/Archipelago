@@ -122,24 +122,29 @@ keyItemList: typing.List[ItemData] = [
     # Used to unlock Graveyard Area
     # ItemData(0x, ItemName.ScrtMemo,		        ItemClassification.filler,	    ItemType.KeyItem, 	52),  #Job related?
     ItemData(0xB61010, ItemName.HeatCross, ItemClassification.progression, ItemType.KeyItem, 53),
+    ItemData(0xB610EF, ItemName.SpoutCross, ItemClassification.progression, ItemType.KeyItem, 53),
     # Renamed from QuizData
     # ItemData(0x, ItemName.ScrblDat,		        ItemClassification.filler,	    ItemType.KeyItem, 	54),  #Job related?
     ItemData(0xB61011, ItemName.SlashCross, ItemClassification.progression, ItemType.KeyItem, 55),
+    ItemData(0xB610F0, ItemName.TenguCross, ItemClassification.progression, ItemType.KeyItem, 55),
     # Renamed from PngnThnk
     ItemData(0xB61012, ItemName.ElecCross, ItemClassification.progression, ItemType.KeyItem, 56),
+    ItemData(0xB610F1, ItemName.TomahawkCross, ItemClassification.progression, ItemType.KeyItem, 56),
     # Renamed from RefrncBk
     ItemData(0xB61013, ItemName.OrderSys, ItemClassification.progression, ItemType.KeyItem, 57),
     # Renamed QuizBook to be OrderSys
     ItemData(0xB61014, ItemName.EraseCross, ItemClassification.progression, ItemType.KeyItem, 58),
+    ItemData(0xB610F2, ItemName.GroundCross, ItemClassification.progression, ItemType.KeyItem, 58),
     # Renamed from InvteCrd
     # ItemData(0x, ItemName.ThnkULtr,		        ItemClassification.filler,	    ItemType.KeyItem, 	59),  #Job related?
 
     ItemData(0xB61015, ItemName.ChargeCross, ItemClassification.progression, ItemType.KeyItem, 60),
+    ItemData(0xB610F3, ItemName.DustCross, ItemClassification.progression, ItemType.KeyItem, 60),
     # Renamed from SrialDat
     # ItemData(0x, ItemName.SciManul,		        ItemClassification.filler,	    ItemType.KeyItem, 	61),  #Reward for Self Research request, lotto code. Renamed to AP Item
     # ItemData(0x, ItemName.SoulEmbl,		        ItemClassification.filler,	    ItemType.KeyItem, 	62),  #Reward for RodToSoulBtlr! request, lotto code
     # ItemData(0x, ItemName.NaviRuin,		        ItemClassification.filler,	    ItemType.KeyItem, 	63),  #Needed in Where's My Navi request
-    # ItemData(0x, ItemName.BtlrCard,		        ItemClassification.filler,	    ItemType.KeyItem, 	64),  #Unlocks Virus Battler and rare viruses
+    ItemData(0xB610F6, ItemName.BtlrCard,		        ItemClassification.progression,	    ItemType.KeyItem, 	64),  #Unlocks Virus Battler and rare viruses
     # ItemData(0x, ItemName.F.Fries,		            ItemClassification.filler,	    ItemType.KeyItem, 	65),  #Needed in Got a Problem. request
     ItemData(0xB61016, ItemName.CybBrdAx, ItemClassification.progression, ItemType.KeyItem, 66),
     # Used to go from Central 3 to Green Area
@@ -343,7 +348,9 @@ chipList: typing.List[ItemData] = [
     ItemData(0xB61097, ItemName.WindRack_star, ItemClassification.filler, ItemType.Chip, 80, chip_code('*')),
     # Virus Battler
     ItemData(0xB61098, ItemName.YoYo_N, ItemClassification.filler, ItemType.Chip, 19, chip_code('N')),  # BMD
-    ItemData(0xB61099, ItemName.YoYo_star, ItemClassification.filler, ItemType.Chip, 19, chip_code('*'))  # BMD
+    ItemData(0xB61099, ItemName.YoYo_star, ItemClassification.filler, ItemType.Chip, 19, chip_code('*')),  # BMD
+    ItemData(0xB610F4, ItemName.Bass_F, ItemClassification.useful, ItemType.Chip, 301, chip_code('F')),  # Bass SP
+    ItemData(0xB610F5, ItemName.BassAnly_F, ItemClassification.useful, ItemType.Chip, 306, chip_code('F'))  # Bass SP
 ]
 
 secretChipList: typing.List[ItemData] = [
@@ -498,12 +505,31 @@ item_groups: typing.Dict[str, typing.Set[str]] = {
     "BugFrags": {loc.itemName for loc in bugFragList}
 }
 
+gregar_only_items = {
+    ItemName.HeatCross,
+    ItemName.ElecCross,
+    ItemName.SlashCross,
+    ItemName.EraseCross,
+    ItemName.ChargeCross,
+    ItemName.Bass_F
+}
+
+falzar_only_items = {
+    ItemName.SpoutCross,
+    ItemName.TomahawkCross,
+    ItemName.TenguCross,
+    ItemName.GroundCross,
+    ItemName.DustCross,
+    ItemName.BassAnly_F
+}
+
 all_items: typing.List[
     ItemData] = keyItemList + subChipList + chipList + secretChipList + programList + zennyList + bugFragList
 item_table: typing.Dict[str, ItemData] = {item.itemName: item for item in all_items}
 items_by_id: typing.Dict[int, ItemData] = {item.code: item for item in all_items}
 
-# Used to get the index in the chip amounts array
+# Used to get the index in the chip amounts array. To calculate: ((ChipID - 1) * 12) + (1 * codeNumber)
+# Codes are in alphabetic order based on the available codes for that chip, 0 indexed
 chips_amount_index: typing.Dict[str, int] = {
     ItemName.AirHocky_M: 589,
     ItemName.AirSpin2_L: 1513,
@@ -516,6 +542,8 @@ chips_amount_index: typing.Dict[str, int] = {
     ItemName.Atk_30_star: 2328,
     ItemName.AuraHed1_B: 1128,
     ItemName.Barr100_H: 2136,
+    ItemName.Bass_F: 3600,
+    ItemName.BassAnly_F: 3660,
     ItemName.BigBomb_O: 2412,
     ItemName.BigBomb_P: 2413,
     ItemName.BlastMan_star: 3073,
