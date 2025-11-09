@@ -134,17 +134,17 @@ keyItemList: typing.List[ItemData] = [
     ItemData(0xB61013, ItemName.OrderSys, ItemClassification.progression, ItemType.KeyItem, 57),
     # Renamed QuizBook to be OrderSys
     ItemData(0xB61014, ItemName.EraseCross, ItemClassification.progression, ItemType.KeyItem, 58),
-    ItemData(0xB610F1, ItemName.GroundCross, ItemClassification.progression, ItemType.KeyItem, 58),
+    ItemData(0xB610F2, ItemName.GroundCross, ItemClassification.progression, ItemType.KeyItem, 58),
     # Renamed from InvteCrd
     # ItemData(0x, ItemName.ThnkULtr,		        ItemClassification.filler,	    ItemType.KeyItem, 	59),  #Job related?
 
     ItemData(0xB61015, ItemName.ChargeCross, ItemClassification.progression, ItemType.KeyItem, 60),
-    ItemData(0xB610F2, ItemName.DustCross, ItemClassification.progression, ItemType.KeyItem, 60),
+    ItemData(0xB610F3, ItemName.DustCross, ItemClassification.progression, ItemType.KeyItem, 60),
     # Renamed from SrialDat
     # ItemData(0x, ItemName.SciManul,		        ItemClassification.filler,	    ItemType.KeyItem, 	61),  #Reward for Self Research request, lotto code. Renamed to AP Item
     # ItemData(0x, ItemName.SoulEmbl,		        ItemClassification.filler,	    ItemType.KeyItem, 	62),  #Reward for RodToSoulBtlr! request, lotto code
     # ItemData(0x, ItemName.NaviRuin,		        ItemClassification.filler,	    ItemType.KeyItem, 	63),  #Needed in Where's My Navi request
-    ItemData(0xB610F5, ItemName.BtlrCard,		        ItemClassification.progression,	    ItemType.KeyItem, 	64),  #Unlocks Virus Battler and rare viruses
+    ItemData(0xB610F6, ItemName.BtlrCard,		        ItemClassification.progression,	    ItemType.KeyItem, 	64),  #Unlocks Virus Battler and rare viruses
     # ItemData(0x, ItemName.F.Fries,		            ItemClassification.filler,	    ItemType.KeyItem, 	65),  #Needed in Got a Problem. request
     ItemData(0xB61016, ItemName.CybBrdAx, ItemClassification.progression, ItemType.KeyItem, 66),
     # Used to go from Central 3 to Green Area
@@ -349,8 +349,8 @@ chipList: typing.List[ItemData] = [
     # Virus Battler
     ItemData(0xB61098, ItemName.YoYo_N, ItemClassification.filler, ItemType.Chip, 19, chip_code('N')),  # BMD
     ItemData(0xB61099, ItemName.YoYo_star, ItemClassification.filler, ItemType.Chip, 19, chip_code('*')),  # BMD
-    ItemData(0xB610F3, ItemName.Bass_F, ItemClassification.useful, ItemType.Chip, 301, chip_code('F')),  # Bass SP
-    ItemData(0xB610F4, ItemName.BassAnly_F, ItemClassification.useful, ItemType.Chip, 306, chip_code('F'))  # Bass SP
+    ItemData(0xB610F4, ItemName.Bass_F, ItemClassification.useful, ItemType.Chip, 301, chip_code('F')),  # Bass SP
+    ItemData(0xB610F5, ItemName.BassAnly_F, ItemClassification.useful, ItemType.Chip, 306, chip_code('F'))  # Bass SP
 ]
 
 secretChipList: typing.List[ItemData] = [

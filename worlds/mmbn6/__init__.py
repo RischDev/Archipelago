@@ -327,6 +327,10 @@ class MMBN6World(World):
                 lambda state: \
                     (state.has(ItemName.HeatCross, self.player) or
                      state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.HeatCross, self.player) or
+                     state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
             self.multiworld.get_location(LocationName.Graveyard_BMD_3, self.player).access_rule = \
                 lambda state: \
                     (state.has(ItemName.HeatCross, self.player) or
@@ -411,11 +415,11 @@ class MMBN6World(World):
             self.multiworld.get_location(LocationName.Undernet_Zero_BMD_2, self.player).access_rule = \
                 lambda state: \
                     (state.has(ItemName.SpoutCross, self.player) or
-                     state.has(ItemName.GroundCross, ItemName.Umbrella, self.player))
+                     state.has(ItemName.GroundCross, self.player))
             self.multiworld.get_location(LocationName.Graveyard_PMD_1, self.player).access_rule = \
                 lambda state: \
                     (state.has(ItemName.SpoutCross, self.player) or
-                     state.has(ItemName.GroundCross, ItemName.Umbrella, self.player))
+                     state.has(ItemName.GroundCross, self.player))
 
             # Trees
             self.multiworld.get_location(LocationName.Green_Area_1_BMD_2, self.player).access_rule = \
@@ -423,6 +427,10 @@ class MMBN6World(World):
                     (state.has(ItemName.GroundCross, self.player) or
                      state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
             self.multiworld.get_location(LocationName.Sky_1_Brown_Navi, self.player).access_rule = \
+                lambda state: \
+                    (state.has(ItemName.GroundCross, self.player) or
+                     state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_3, self.player).access_rule = \
                 lambda state: \
                     (state.has(ItemName.GroundCross, self.player) or
                      state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))

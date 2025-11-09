@@ -274,6 +274,9 @@ class LocalRom:
             else:
                 # It should be theoretically impossible to call insert_hint_text before actually injecting the item.
                 raise AssertionError(f"Inserting a hint at a location that doesn't have an item! Location: {location.name}")
+            # If a string is too long, remove "Program: " to prevent garbled text.
+            if len(long_text) > 20:
+                long_text = long_text.replace("Program: ", "")
             archive.inject_item_text(short_text, long_text)
 
 

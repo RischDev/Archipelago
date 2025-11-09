@@ -298,11 +298,24 @@ class MMBN6Client(BizHawkClient):
         return True
 
     @staticmethod
-    async def give_reg_up(ctx: "BizHawkClientContext", amount) -> bool:
-        # First, get the hp amounts we have
-        read_result = await read(ctx.bizhawk_ctx, [RAM_ADDRS["reg_mem"]])
+    async def give_reg_up(ctx: "BizHawkClientContext", item, xor) -> bool:
+        # Determine amount of regmem to give based on itemID
+        amount = 0
+        if item == 114:
+            amount = 1
+        elif item == 115:
+            amount = 2
+        elif item == 116:
+            amount = 3
+
+        # Get the regmem we have, amount of the item, and anticheat base
+        read_result = await read(ctx.bizhawk_ctx, [RAM_ADDRS["reg_mem"],
+                                                   (RAM_ADDRS["key_item_amount_start"][0] + item, 1, "EWRAM"),
+                                                   (RAM_ADDRS["key_item_anticheat_base_start"][0] + item, 1, "EWRAM")])
 
         reg_mem = read_result[0][0]
+        item_amount = read_result[1][0]
+        anticheat_base = read_result[2][0]
 
         # If Reg Memory is already 50, don't give more memory.
         if reg_mem == 50:
@@ -313,8 +326,11 @@ class MMBN6Client(BizHawkClient):
         while not write_result:
             # Write to the addresses if they haven't changed.
             write_result = await guarded_write(ctx.bizhawk_ctx,
-                                               [(RAM_ADDRS["reg_mem"][0], [reg_mem + amount], "EWRAM")],
-                                               [(RAM_ADDRS["reg_mem"][0], [reg_mem], "EWRAM")])
+                                               [(RAM_ADDRS["reg_mem"][0], [reg_mem + amount], "EWRAM"),
+                                                (RAM_ADDRS["key_item_amount_start"][0] + item, [item_amount + 1], "EWRAM"),
+                                                (RAM_ADDRS["key_item_anticheat_value_start"][0] + item, [anticheat_base ^ xor], "EWRAM")],
+                                               [(RAM_ADDRS["reg_mem"][0], [reg_mem], "EWRAM"),
+                                                (RAM_ADDRS["key_item_amount_start"][0] + item, [item_amount], "EWRAM")])
 
             await asyncio.sleep(0.05)
             total += 0.05
@@ -420,15 +436,9 @@ class MMBN6Client(BizHawkClient):
                 if item.itemID == 112:
                     # HP Memory
                     result = await self.give_hp_mem(ctx)
-                elif item.itemID == 114:
+                elif item.itemID in (114, 115, 116):
                     # RegUp1
-                    result = await self.give_reg_up(ctx, 1)
-                elif item.itemID == 115:
-                    # RegUp2
-                    result = await self.give_reg_up(ctx, 2)
-                elif item.itemID == 116:
-                    # RegUp3
-                    result = await self.give_reg_up(ctx, 3)
+                    result = await self.give_reg_up(ctx, item.itemID, self.key_item_xor)
                 else:
                     result = await self.give_item(ctx, item.itemID, self.key_item_xor)
             elif item.type == ItemType.Program:
