@@ -1031,6 +1031,13 @@ class MMBN6World(World):
             if os.path.exists(rompath):
                 os.unlink(rompath)
 
+    @classmethod
+    def stage_assert_generate(cls, multiworld: "MultiWorld") -> None:
+        for world in multiworld.get_game_worlds("MegaMan Battle Network 6"):
+            rom_file = get_base_rom_path(game_version=world.options.game_version.current_key)
+            if not os.path.exists(rom_file):
+                raise FileNotFoundError(rom_file)
+
     def create_item(self, name: str) -> "Item":
         item = item_table[name]
         return MMBN6Item(item.itemName, item.progression, item.code, self.player)
