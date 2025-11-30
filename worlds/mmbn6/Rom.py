@@ -339,19 +339,33 @@ def get_base_rom_path(file_name: str = "", game_version: str = "") -> str:
     return file_name
 
 
-def get_base_rom_bytes(file_name: str = "") -> bytes:
-    base_rom_bytes = getattr(get_base_rom_bytes, "base_rom_bytes", None)
-    if not base_rom_bytes:
-        file_name = get_base_rom_path(file_name)
-        base_rom_bytes = bytes(open(file_name, "rb").read())
+def get_base_rom_bytes(file_name: str = "", game_version: str = "") -> bytes:
+    if game_version == "gregar":
+        base_rom_bytes = getattr(get_base_rom_bytes, "gregar_base_rom_bytes", None)
+        if not base_rom_bytes:
+            file_name = get_base_rom_path(file_name)
+            base_rom_bytes = bytes(open(file_name, "rb").read())
 
-        basemd5 = hashlib.md5()
-        basemd5.update(base_rom_bytes)
-        if CHECKSUM_GREG != basemd5.hexdigest() and CHECKSUM_FALZ != basemd5.hexdigest():
-            raise Exception('Supplied Base Rom does not match US GBA Gregar or US GBA Falzar Version.'
-                            'Please provide the correct ROM version')
+            basemd5 = hashlib.md5()
+            basemd5.update(base_rom_bytes)
+            if CHECKSUM_GREG != basemd5.hexdigest():
+                raise Exception('Supplied Base Rom does not match US GBA Gregar.'
+                                'Please provide the correct ROM version')
 
-        get_base_rom_bytes.base_rom_bytes = base_rom_bytes
+            get_base_rom_bytes.gregar_base_rom_bytes = base_rom_bytes
+    else:
+        base_rom_bytes = getattr(get_base_rom_bytes, "falzar_base_rom_bytes", None)
+        if not base_rom_bytes:
+            file_name = get_base_rom_path(file_name)
+            base_rom_bytes = bytes(open(file_name, "rb").read())
+
+            basemd5 = hashlib.md5()
+            basemd5.update(base_rom_bytes)
+            if CHECKSUM_GREG != basemd5.hexdigest() and CHECKSUM_FALZ != basemd5.hexdigest():
+                raise Exception('Supplied Base Rom does not match US GBA Falzar Version.'
+                                'Please provide the correct ROM version')
+
+            get_base_rom_bytes.falzar_base_rom_bytes = base_rom_bytes
     return base_rom_bytes
 
 
@@ -362,7 +376,7 @@ def get_patched_rom_bytes(file_name: str = "", game_version: str = "") -> bytes:
     Which should contain all changed text banks and assembly code
     """
     import pkgutil
-    base_rom_bytes = get_base_rom_bytes(file_name)
+    base_rom_bytes = get_base_rom_bytes(file_name, game_version)
     if game_version == "gregar":
         patch_bytes = pkgutil.get_data(__name__, "data/bn6g-ap-patch.bsdiff")
     else:
