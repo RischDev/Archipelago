@@ -1,20 +1,24 @@
-from BaseClasses import ItemClassification
-from worlds.Files import APDeltaPatch
+import struct
+from typing import TYPE_CHECKING, List, Tuple
 
-import Utils
-import os
-import hashlib
+from worlds.Files import APProcedurePatch, APTokenMixin, APTokenTypes, APPatchExtension
+
 import bsdiff4
+
+from .Options import GameVersion
+from .GregarLocations import gregar_update_addresses
+from .FalzarLocations import falzar_update_addresses
 from .lz10 import gba_decompress, gba_compress
 
 from settings import get_settings
 
-from .BN6RomUtils import ArchiveToReferencesGregar, ArchiveToReferencesFalzar, read_u16_le, read_u32_le, int16_to_byte_list_le, int24_to_byte_list_le, \
-    ArchiveToSizeCompGregar, ArchiveToSizeUncompGregar, ArchiveToSizeCompFalzar, ArchiveToSizeUncompFalzar, generate_item_message, generate_external_item_message, generate_text_bytes, \
-    update_mystery_data, update_mystery_data_external
+from .BN6RomUtils import ArchiveToReferencesGregar, ArchiveToReferencesFalzar, read_u16_le, int16_to_byte_list_le, int24_to_byte_list_le, generate_text_bytes
 
-from .Items import ItemType
-from .Locations import LocationType
+from .Items import ItemType, items_by_id, ItemData
+from .Locations import LocationType, location_table, falzar_only_locs, gregar_only_locs, location_data_table
+
+if TYPE_CHECKING:
+    from . import MMBN6World
 
 CHECKSUM_GREG = "5acc75848bb1ffd3d6d8705554ee333d"
 CHECKSUM_FALZ = "1e8c774ba210d1c55113531c7360c737"
@@ -198,107 +202,59 @@ class TextArchive:
                             oldbytes.extend([0xE7, 0x00, 0xF2])
                         self.scripts[script_index].messageBoxes[message_index] = oldbytes
 
+class MMBN6PatchExtension(APPatchExtension):
+    game = "MegaMan Battle Network 6"
 
-class LocalRom:
-    def __init__(self, game_version, name=None):
-        self.name = name
-        self.changed_archives = {}
-        self.game_version = game_version
+    @staticmethod
+    def apply_bsdiff(caller: APProcedurePatch, rom: bytes, patch: str) -> bytes:
+        rom_data = bytearray(rom)
+        if rom_data[0xBC] == 1:
+            return bsdiff4.patch(rom, caller.get_file("base_patch.bsdiff4"))
+        return bsdiff4.patch(rom, caller.get_file(patch))
 
-        if game_version == "gregar":
-            self.archive_to_size_comp = ArchiveToSizeCompGregar
-            self.archive_to_size_uncomp = ArchiveToSizeUncompGregar
-        else:
-            self.archive_to_size_comp = ArchiveToSizeCompFalzar
-            self.archive_to_size_uncomp = ArchiveToSizeUncompFalzar
+    @staticmethod
+    def apply_tokens(caller: APProcedurePatch, rom: bytes, token_file: str) -> bytes:
+        rom_data = bytearray(rom)
 
-        self.rom_data = bytearray(get_patched_rom_bytes(get_base_rom_path(game_version=self.game_version), self.game_version))
+        token_data = caller.get_file(token_file)
 
-    def get_data_chunk(self, start_offset, size):
-        if start_offset+size > len(self.rom_data):
-            print("Attempting to get data chunk beyond the size of the ROM: "+hex(start_offset)+", ROM size ends at: "+hex(len(self.rom_data)))
-        return self.rom_data[start_offset:start_offset + size]
-
-    def replace_item(self, location, offset, item):
-        # For Mystery Data, we need to update the Mystery Data table. For everything else, we update the Text Archive.
-        if location.type == LocationType.BlueMysteryData or location.type == LocationType.PurpleMysteryData:
-            if item.type == ItemType.External:
-                self.rom_data = update_mystery_data_external(self.rom_data, offset)
+        token_count = int.from_bytes(token_data[0:4], "little")
+        bpr = 4
+        for _ in range(token_count):
+            token_type = token_data[bpr:bpr + 1][0]
+            offset = int.from_bytes(token_data[bpr + 1:bpr + 5], "little")
+            size = int.from_bytes(token_data[bpr + 5:bpr + 9], "little")
+            data = token_data[bpr + 9:bpr + 9 + size]
+            if token_type in [APTokenTypes.AND_8, APTokenTypes.OR_8, APTokenTypes.XOR_8]:
+                arg = data[0]
+                if token_type == APTokenTypes.AND_8:
+                    rom_data[offset] = rom_data[offset] & arg
+                elif token_type == APTokenTypes.OR_8:
+                    rom_data[offset] = rom_data[offset] | arg
+                else:
+                    rom_data[offset] = rom_data[offset] ^ arg
+            elif token_type in [APTokenTypes.COPY, APTokenTypes.RLE]:
+                length = int.from_bytes(data[:4], "little")
+                value = int.from_bytes(data[4:], "little")
+                if token_type == APTokenTypes.COPY:
+                    rom_data[offset: offset + length] = rom_data[value: value + length]
+                else:
+                    rom_data[offset: offset + length] = bytes([value] * length)
             else:
-                self.rom_data = update_mystery_data(self.rom_data, offset, item.type, item.itemID, item.subItemID, item.count)
-        elif location.type == LocationType.Boss:
-            # Nothing to change in the ROM, do nothing
-            return
-        else:
-            # If the archive is already loaded, use that
-            if offset in self.changed_archives:
-                archive = self.changed_archives[offset]
-            else:
-                is_compressed = offset in self.archive_to_size_comp.keys()
-                size = self.archive_to_size_comp[offset] if is_compressed\
-                    else self.archive_to_size_uncomp[offset]
-                data = self.get_data_chunk(offset, size)
-                # Check if the archive we want to load has been moved by the patch. This is indicated by a 0xFF 0xFF
-                # as the first two bytes of the chunk
+                rom_data[offset:offset + len(data)] = data
+            bpr += 9 + size
+        return bytes(rom_data)
 
-                if data[0] == 0xFF and data[1] == 0xFF:
-                    new_size_bytes = data[2:4]
-                    new_address_le = data[4:8]
-                    # Last byte should be zero since we're dealing with purely ROM address space
-                    new_address_le[3] = 0x0
-                    size = read_u16_le(new_size_bytes, 0)
-                    data = self.get_data_chunk(read_u32_le(new_address_le, 0), size)
-
-                archive = TextArchive(data, offset, size, self.game_version, is_compressed)
-                self.changed_archives[offset] = archive
-
-            if item.type == ItemType.External:
-                item_bytes = generate_external_item_message(item.itemName, item.recipient)
-            else:
-                item_bytes = generate_item_message(item)
-            archive.inject_item_message(location.text_script_index, location.text_box_indices,
-                                        item_bytes)
-
-
-    def insert_hint_text(self, location, offset, short_text, long_text = ""):
-        """
-        Replaces the placeholder text in this location's archive with short_text,
-        gives another text box for long_text if it's present
-        """
-
-        # Replace item name placeholders
-        if location.inject_name:
-            # If the archive is already loaded, use that
-            if offset in self.changed_archives:
-                archive = self.changed_archives[offset]
-            else:
-                # It should be theoretically impossible to call insert_hint_text before actually injecting the item.
-                raise AssertionError(f"Inserting a hint at a location that doesn't have an item! Location: {location.name}")
-            # If a string is too long, remove "Program: " to prevent garbled text.
-            if len(long_text) > 20:
-                long_text = long_text.replace("Program: ", "")
-            archive.inject_item_text(short_text, long_text)
-
-
-    def inject_name(self, player):
-        authname = player
-        authname = authname+('\x00' * (63 - len(player)))
-        self.rom_data[0x7FFFC0:0x7FFFFF] = bytes(authname, 'utf8')
-
-    def write_changed_rom(self):
-        for archive in self.changed_archives.values():
-            self.rom_data = archive.inject_into_rom(self.rom_data)
-
-    def write_to_file(self, out_path):
-        with open(out_path, "wb") as rom:
-            rom.write(self.rom_data)
-
-
-class MMBN6GregarDeltaPatch(APDeltaPatch):
+class MMBN6GregarProcedurePatch(APProcedurePatch, APTokenMixin):
     hash = CHECKSUM_GREG
     game = "MegaMan Battle Network 6"
     patch_file_ending = ".apbn6g"
     result_file_ending = ".gba"
+
+    procedure = [
+        ("apply_bsdiff4", ["base_patch.bsdiff"]),
+        ("apply_tokens", ["token_data.bin"])
+    ]
 
     @classmethod
     def get_source_data(cls) -> bytes:
@@ -306,11 +262,16 @@ class MMBN6GregarDeltaPatch(APDeltaPatch):
             base_rom_bytes = bytes(infile.read())
         return base_rom_bytes
 
-class MMBN6FalzarDeltaPatch(APDeltaPatch):
+class MMBN6FalzarProcedurePatch(APProcedurePatch, APTokenMixin):
     hash = CHECKSUM_FALZ
     game = "MegaMan Battle Network 6"
     patch_file_ending = ".apbn6f"
     result_file_ending = ".gba"
+
+    procedure = [
+        ("apply_bsdiff4", ["base_patch.bsdiff"]),
+        ("apply_tokens", ["token_data.bin"])
+    ]
 
     @classmethod
     def get_source_data(cls) -> bytes:
@@ -318,68 +279,127 @@ class MMBN6FalzarDeltaPatch(APDeltaPatch):
             base_rom_bytes = bytes(infile.read())
         return base_rom_bytes
 
+class MMBN6PatchData:
+    tokens: APTokenMixin
+    game_version: str
 
-def get_base_rom_path(file_name: str = "", game_version: str = "") -> str:
-    if not file_name:
-        from worlds.mmbn6 import MMBN6World
-        bn6_settings = MMBN6World.settings
+    def __init__(self) -> None:
+        self.tokens = APTokenMixin()
+        self.game_version = ""
+        self.token_data = []
 
-        if game_version == "gregar":
-            if bn6_settings is None:
-                file_name = "Mega Man Battle Network 6 - Cybeast Gregar (USA).gba"
+    def set_game_version(self, game_version: str) -> None:
+        self.game_version = game_version
+
+    def write_token(self,
+                    address: int | List[int],
+                    offset: int,
+                    data: bytes | Tuple[int, int] | int) -> None:
+        if type(address) is int:
+            self.tokens.write_token(APTokenTypes.WRITE, address + offset, data)
+        elif type(address) is list:
+            for addr in address:
+                self.tokens.write_token(APTokenTypes.WRITE, addr + offset, data)
+
+    def get_token_bytes(self) -> bytes:
+        return self.tokens.get_token_binary()
+
+def write_tokens(world: "MMBN6World", player: "int") -> None:
+    patch = world.patch_data
+
+    # Write player name
+    authname = world.multiworld.player_name[player]
+    authname = bytes(authname + ('\x00' * (63 - len(authname))), 'utf-8')
+    for j, b in enumerate(authname):
+        patch.write_token(0x7FFFC0, j, struct.pack("<B", b))
+
+    for location_name in location_table.keys():
+        # Skip locations from the opposite version
+        if patch.game_version == "gregar" and location_name in falzar_only_locs:
+            continue
+        elif patch.game_version == "falzar" and location_name in gregar_only_locs:
+            continue
+
+        location_data = location_data_table[location_name]
+
+        # Skip Boss locations, as there is nothing to update
+        if location_data.type == LocationType.Boss:
+            continue
+
+        location = world.get_location(location_name)
+        ap_item = location.item
+        item_id = ap_item.code
+
+        if item_id is not None:
+            if ap_item.player != player or item_id not in items_by_id:
+                item = ItemData(item_id, ap_item.name, ap_item.classification, ItemType.External)
+                item = item._replace(recipient=world.multiworld.player_name[ap_item.player])
             else:
-                file_name = bn6_settings["gregar_rom_file"]
+                item = items_by_id[item_id]
+
+            if patch.game_version == "gregar":
+                address = gregar_update_addresses[location_name]
+            else:
+                address = falzar_update_addresses[location_name]
+
+            if location_data.type == LocationType.BlueMysteryData or location_data.type == LocationType.PurpleMysteryData:
+                set_mystery_data(world, address, item)
+
+def set_mystery_data(world: "MMBN6World", address: "int", item: "ItemData") -> None:
+    # Reference to the Mystery Data structure: https://forums.therockmanexezone.com/bn4-6-sf1-mystery-data-wave-structure-t5398.html
+    # The update address for Mystery Data is the Contents Entry. All we need to update is the type (0x00), the item sub-value (0x03), and the item value (0x04)
+    patch = world.patch_data
+    item_type = 0
+    sub_value = 0xFF
+    value = 0
+
+    # Define the mystery data item type, sub-value, and value
+    if item.type == ItemType.KeyItem:
+        # Item = HPMemory
+        if item.itemID == 112:
+            item_type = 0x08
+        # Item = RegUp1, RegUp2, RegUp3
+        elif item.itemID == 114 or item.itemID == 115 or item.itemID == 116:
+            item_type = 0x0A
+        if item.itemID == 117:
+            # Item = SubMemry
+            item_type = 0x0B
+        if item.itemID == 113:
+            # Item = ExpMemry
+            item_type = 0x0C
         else:
-            if bn6_settings is None:
-                file_name = "Mega Man Battle Network 6 - Cybeast Falzar (USA).gba"
-            else:
-                file_name = bn6_settings["falzar_rom_file"]
-    if not os.path.exists(file_name):
-        file_name = Utils.user_path(file_name)
-    return file_name
+            # Item = Key Item
+            item_type = 0x04
+        # Sub-value is 0xFF, value is itemID
+        sub_value = 0xFF
+        value = item.itemID
+    elif item.type == ItemType.Chip:
+        item_type = 0x01
+        sub_value = item.subItemID
+        value = item.itemID
+    elif item.type == ItemType.SubChip:
+        item_type = 0x02
+        sub_value = 0xFF
+        value = item.itemID
+    elif item.type == ItemType.Zenny:
+        item_type = 0x03
+        sub_value = 0xFF
+        value = item.count
+    elif item.type == ItemType.BugFrag:
+        item_type = 0x05
+        sub_value = 0xFF
+        value = item.count
+    elif item.type == ItemType.Program:
+        # For programs, multiply the programID by 4 and add 144 to get the value
+        item_type = 0x09
+        sub_value = item.subItemID
+        value = 144 + (item.itemID * 4)
+    elif item.type == ItemType.External:
+        # External items use itemID 61, or 0x3D
+        item_type = 0x04
+        sub_value = 0xFF
+        value = 0x3D
 
-
-def get_base_rom_bytes(file_name: str = "", game_version: str = "") -> bytes:
-    if game_version == "gregar":
-        base_rom_bytes = getattr(get_base_rom_bytes, "gregar_base_rom_bytes", None)
-        if not base_rom_bytes:
-            file_name = get_base_rom_path(file_name)
-            base_rom_bytes = bytes(open(file_name, "rb").read())
-
-            basemd5 = hashlib.md5()
-            basemd5.update(base_rom_bytes)
-            if CHECKSUM_GREG != basemd5.hexdigest():
-                raise Exception('Supplied Base Rom does not match US GBA Gregar.'
-                                'Please provide the correct ROM version')
-
-            get_base_rom_bytes.gregar_base_rom_bytes = base_rom_bytes
-    else:
-        base_rom_bytes = getattr(get_base_rom_bytes, "falzar_base_rom_bytes", None)
-        if not base_rom_bytes:
-            file_name = get_base_rom_path(file_name)
-            base_rom_bytes = bytes(open(file_name, "rb").read())
-
-            basemd5 = hashlib.md5()
-            basemd5.update(base_rom_bytes)
-            if CHECKSUM_GREG != basemd5.hexdigest() and CHECKSUM_FALZ != basemd5.hexdigest():
-                raise Exception('Supplied Base Rom does not match US GBA Falzar Version.'
-                                'Please provide the correct ROM version')
-
-            get_base_rom_bytes.falzar_base_rom_bytes = base_rom_bytes
-    return base_rom_bytes
-
-
-def get_patched_rom_bytes(file_name: str = "", game_version: str = "") -> bytes:
-    """
-    Gets the patched ROM data generated from applying the ap-patch diff file to the provided ROM.
-    Diff patch generated by https://github.com/RischDev/bn6-ap-patch
-    Which should contain all changed text banks and assembly code
-    """
-    import pkgutil
-    base_rom_bytes = get_base_rom_bytes(file_name, game_version)
-    if game_version == "gregar":
-        patch_bytes = pkgutil.get_data(__name__, "data/bn6g-ap-patch.bsdiff")
-    else:
-        patch_bytes = pkgutil.get_data(__name__, "data/bn6f-ap-patch.bsdiff")
-    patched_rom_bytes = bsdiff4.patch(base_rom_bytes, patch_bytes)
-    return patched_rom_bytes
+    patch.write_token(address, 0, struct.pack("<B", item_type))
+    patch.write_token(address, 3, struct.pack("<B", sub_value))
+    patch.write_token(address, 4, struct.pack("<I", value))
