@@ -99,11 +99,11 @@ def generate_text_bytes(message) -> bytearray:
     return bytearray(char_to_hex(c) for c in message)
 
 def char_to_hex(c) -> int:
-    if c in charDict:
+    if c in charDict and 0 <= charDict[c] <= 255:
         return charDict[c]
     else:
-        # If the character doesn't exist, return the star character
-        return 0xE4E5
+        # If the character doesn't exist, or is out of range for a single byte value, return the star character
+        return 0x25
 
 def generate_chip_get(chip, code, amt) -> bytearray:
     chip_bytes = int16_to_byte_list_le(chip)
