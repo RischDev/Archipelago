@@ -957,6 +957,9 @@ class MMBN6World(World):
 
         game_version = self.options.game_version.current_key
         self.patch_data.set_game_version(game_version)
+        item_hinting = self.options.trade_quest_hinting
+        self.patch_data.set_item_hinting(item_hinting)
+
         write_tokens(self, self.player)
         patch.write_file("token_data.bin", self.patch_data.get_token_bytes())
 

@@ -1,21 +1,25 @@
 import struct
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, List, Tuple, Dict
 
+from BaseClasses import ItemClassification
 from worlds.Files import APProcedurePatch, APTokenMixin, APTokenTypes, APPatchExtension
 
 import bsdiff4
 
-from .Options import GameVersion
+from .Data import data
+from .Options import GameVersion, TradeQuestHinting
 from .GregarLocations import gregar_update_addresses
 from .FalzarLocations import falzar_update_addresses
 from .lz10 import gba_decompress, gba_compress
 
 from settings import get_settings
 
-from .BN6RomUtils import ArchiveToReferencesGregar, ArchiveToReferencesFalzar, read_u16_le, int16_to_byte_list_le, int24_to_byte_list_le, generate_text_bytes
+from .BN6RomUtils import (read_u16_le, int16_to_byte_list_le, int24_to_byte_list_le, generate_text_bytes,
+                          generate_external_item_message, generate_item_message)
 
 from .Items import ItemType, items_by_id, ItemData
-from .Locations import LocationType, location_table, falzar_only_locs, gregar_only_locs, location_data_table
+from .Locations import LocationType, location_table, falzar_only_locs, gregar_only_locs, location_data_table, \
+    LocationData
 
 if TYPE_CHECKING:
     from . import MMBN6World
@@ -86,15 +90,12 @@ class ArchiveScript:
 
 
 class TextArchive:
-    def __init__(self, data, offset, size, game_version, compressed=True):
+    def __init__(self, data, offset, size, references, compressed=True):
         self.startOffset = offset
         self.compressed = compressed
         self.scripts = {}
         self.scriptCount = 0xFF
-        if game_version == "gregar":
-            self.references = ArchiveToReferencesGregar[offset]
-        else:
-            self.references = ArchiveToReferencesFalzar[offset]
+        self.references = references
         self.unused_indices = []  # A list of places it's okay to inject new scripts
 
         self.text_changed = False
@@ -167,19 +168,23 @@ class TextArchive:
         for index in message_indices[1:]:
             self.scripts[script_index].messageBoxes[index] = []
 
-    def inject_into_rom(self, modified_rom_data):
+    def write_tokens(self, world: "MMBN6World", rom_length):
+        patch = world.patch_data
         working_data = self.generate_data(self.compressed)
 
         # It needs to start on a byte divisible by 4. If the rom data is not, add an FF
-        while len(modified_rom_data) % 4 != 0:
-            modified_rom_data.append(0xFF)
-        new_start_offset = 0x08000000 + len(modified_rom_data)
+        while rom_length % 4 != 0:
+            patch.write_token(rom_length, 0, struct.pack("<B", 0xFF))
+            rom_length += 1
+
         # Only try to inject the 3 bytes after 0x08 or 0x88 for references
-        offset_byte = int24_to_byte_list_le(len(modified_rom_data))
-        modified_rom_data.extend(working_data)
-        for offset in self.references:
-            modified_rom_data[offset:offset+3] = offset_byte
-        return modified_rom_data
+        new_start_offset = rom_length
+        for byte in working_data:
+            patch.write_token(rom_length, 0, struct.pack("<B", byte))
+            rom_length += 1
+        for address in self.references:
+            patch.write_token(address, 0, struct.pack("<L", new_start_offset)[:3])
+        return rom_length
 
     def inject_item_text(self, item_text, next_message=""):
         item_text_bytes = generate_text_bytes(item_text)
@@ -282,14 +287,20 @@ class MMBN6FalzarProcedurePatch(APProcedurePatch, APTokenMixin):
 class MMBN6PatchData:
     tokens: APTokenMixin
     game_version: str
+    changed_archives: Dict[int, TextArchive]
 
     def __init__(self) -> None:
         self.tokens = APTokenMixin()
         self.game_version = ""
+        self.item_hinting = -1
         self.token_data = []
+        self.changed_archives = {}
 
     def set_game_version(self, game_version: str) -> None:
         self.game_version = game_version
+
+    def set_item_hinting(self, item_hinting: TradeQuestHinting) -> None:
+        self.item_hinting = item_hinting
 
     def write_token(self,
                     address: int | List[int],
@@ -344,6 +355,13 @@ def write_tokens(world: "MMBN6World", player: "int") -> None:
 
             if location_data.type == LocationType.BlueMysteryData or location_data.type == LocationType.PurpleMysteryData:
                 set_mystery_data(world, address, item)
+            elif location_data.type in (LocationType.OverWorld, LocationType.Request, LocationType.LottoCode):
+                set_text_archive(world, location_data, address, item)
+
+            if location_data.inject_name:
+                set_hint_text(world, location_data, address, item)
+
+    write_text_archives(world)
 
 def set_mystery_data(world: "MMBN6World", address: "int", item: "ItemData") -> None:
     # Reference to the Mystery Data structure: https://forums.therockmanexezone.com/bn4-6-sf1-mystery-data-wave-structure-t5398.html
@@ -403,3 +421,81 @@ def set_mystery_data(world: "MMBN6World", address: "int", item: "ItemData") -> N
     patch.write_token(address, 0, struct.pack("<B", item_type))
     patch.write_token(address, 3, struct.pack("<B", sub_value))
     patch.write_token(address, 4, struct.pack("<I", value))
+
+def set_text_archive(world: "MMBN6World", location: "LocationData", address: "int", item: "ItemData") -> None:
+    patch = world.patch_data
+
+    if address in patch.changed_archives:
+        archive = patch.changed_archives[address]
+    else:
+        address_key = hex(address).upper().replace("X", "x")
+        archive_data = data.gregar_archive_data[address_key]
+
+        is_compressed = archive_data["compressed"]
+        size = archive_data["size"]
+        references = archive_data["references"]
+        byte_data = bytearray(archive_data["bytes"])
+
+        archive = TextArchive(byte_data, address, size, references, is_compressed)
+        patch.changed_archives[address] = archive
+
+    if item.type == ItemType.External:
+        item_bytes = generate_external_item_message(item.itemName, item.recipient)
+    else:
+        item_bytes = generate_item_message(item)
+
+    archive.inject_item_message(location.text_script_index, location.text_box_indices,
+                                item_bytes)
+
+def set_hint_text(world: "MMBN6World", location: "LocationData", address: "int", item: "ItemData") -> None:
+    patch = world.patch_data
+
+    item_name_text = "Item"
+    long_item_text = ""
+
+    # No item hinting
+    if patch.item_hinting == 0:
+        item_name_text = "Check"
+    # Partial item hinting
+    elif patch.item_hinting == 1:
+        if item.progression == ItemClassification.progression \
+                or item.progression == ItemClassification.progression_skip_balancing:
+            item_name_text = "Progress"
+        elif item.progression == ItemClassification.useful \
+                or item.progression == ItemClassification.trap:
+            item_name_text = "Item"
+        else:
+            item_name_text = "Garbage"
+
+        if item.recipient == 'Myself':
+            item_name_text = "Your " + item_name_text
+        else:
+            item_name_text = item.recipient + "'s " + item_name_text
+    # Full item hinting
+    else:
+        owners_name = "Your" if item.recipient == 'Myself' else item.recipient + "'s"
+        if item.recipient == "Myself":
+            long_item_text = f"It's {owners_name} \n\"{item.itemName}\"!!"
+        else:
+            # To keep things consistent, only specify "AP Item" in game
+            long_item_text = f"It's {owners_name} \n\"AP Item\"!!"
+
+    # If the archive is already loaded, use that
+    if address in patch.changed_archives:
+        archive = patch.changed_archives[address]
+    else:
+        # It should be theoretically impossible to call insert_hint_text before actually injecting the item.
+        raise AssertionError(
+            f"Inserting a hint at a location that doesn't have an item! Location: {location.name}")
+    # If a string is too long, remove "Program: " to prevent garbled text.
+    if len(long_item_text) > 20:
+        long_text = long_item_text.replace("Program: ", "")
+    archive.inject_item_text(item_name_text, long_item_text)
+
+def write_text_archives(world: "MMBN6World") -> None:
+    patch = world.patch_data
+    rom_length = data.rom_data_end
+
+    for archive in patch.changed_archives.values():
+        rom_length = archive.write_tokens(world, rom_length)
+

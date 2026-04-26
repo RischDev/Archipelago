@@ -179,6 +179,7 @@ gregar_update_addresses: typing.Dict[str, int] = {
     LocationName.Sky_1_Brown_Navi: 0x7903B4,
     LocationName.Bass: 0x7D6DC0,
     LocationName.Bass_SP: 0x7D7414,
+    LocationName.Bass_BX: 0x78F964,
     LocationName.Talk_To_Mayl: 0x766E28,
     LocationName.ElecMan_Class: 0x7BFE50,
     LocationName.SlashMan_Class: 0x7BA78C,

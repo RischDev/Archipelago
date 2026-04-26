@@ -230,6 +230,7 @@ overworlds = [
     LocationData(LocationName.Sky_1_Brown_Navi,                   0xB610AC, 0x1CB9, 0x04, LocationType.OverWorld, 0x000000,   6, [2]),
     LocationData(LocationName.Bass,                               0xB610AD, 0x1E89, 0x01, LocationType.OverWorld, 0x000000,   2, [1]),
     LocationData(LocationName.Bass_SP,                            0xB61126, 0x1CF6, 0x80, LocationType.OverWorld, 0x000000,  39, [1]),
+    LocationData(LocationName.Bass_BX,                            0xB6112C, 0x1CCC, 0x10, LocationType.OverWorld, 0x000000,   0, [1]),
     LocationData(LocationName.Talk_To_Mayl,                       0xB610AE, 0x1CC5, 0x20, LocationType.OverWorld, 0x000000,  11, [3]),
     LocationData(LocationName.ElecMan_Class,                      0xB6111E, 0x1DDF, 0x10, LocationType.OverWorld, 0x000000,   5, [0]),
     LocationData(LocationName.SlashMan_Class,                     0xB6111F, 0x1D94, 0x80, LocationType.OverWorld, 0x000000,   1, [0]),
@@ -363,7 +364,8 @@ bosses = [
     LocationData(LocationName.CircusMan_SP,  0xB6111A, 0x1CF2, 0x40, LocationType.Boss),
     LocationData(LocationName.JudgeMan_SP,   0xB6111B, 0x1CF2, 0x01, LocationType.Boss),
     LocationData(LocationName.ElementMan_SP, 0xB6111C, 0x1CF3, 0x04, LocationType.Boss),
-    LocationData(LocationName.Colonel_SP,    0xB6111D, 0x1CF5, 0x40, LocationType.Boss)
+    LocationData(LocationName.Colonel_SP,    0xB6111D, 0x1CF5, 0x40, LocationType.Boss),
+    LocationData(LocationName.ProtoMan_FZ,   0xB6112D, 0x1CF0, 0x80, LocationType.Boss)
 ]
 
 graveyard_locations = {
