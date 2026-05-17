@@ -105,6 +105,10 @@ class MMBN6World(World):
             self.excluded_locations |= sp_boss_locations
         if not self.options.include_virus_battler:
             self.excluded_locations |= virus_battler_locations
+        if not self.options.include_bass_bx:
+            self.excluded_locations.add(LocationName.Bass_BX)
+        if not self.options.include_protoman_fz:
+            self.excluded_locations.add(LocationName.ProtoMan_FZ)
 
     def create_regions(self) -> None:
         """
@@ -569,6 +573,10 @@ class MMBN6World(World):
         self.multiworld.get_location(LocationName.Bass_SP, self.player).access_rule = \
             lambda state: state.can_reach_region(RegionName.Green_Cyberworld, self.player)
 
+        # Bass BX requires defeating Bass and Bass SP first, which means Green Cyberworld and Graveyard access is required.
+        self.multiworld.get_location(LocationName.Bass_SP, self.player).access_rule = \
+            lambda state: state.can_reach_region(RegionName.Green_Cyberworld, self.player) and state.can_reach_region(RegionName.Graveyard, self.player)
+
         # Get the player's current possible request points based on accessible locations. This determines if a certain rank
         # is achievable to unlock higher star requests.
         def request_points_possible(state):
@@ -638,7 +646,7 @@ class MMBN6World(World):
             if state.has_all({ItemName.PoisSeed_P, ItemName.OrderSys, ItemName.Anubis_P}, self.player):
                 request_points += 2
 
-            # If not Rank B, then can't do more requests
+            # If not Rank A, then can't do more requests
             if request_points < 25:
                 return request_points
 
@@ -659,7 +667,31 @@ class MMBN6World(World):
             if state.can_reach_region(RegionName.Sky_Overworld, self.player):
                 request_points += 3
 
-            # At this point, if we have over 35 request points, all requests are available
+            # If not Rank S, then can't do more requests
+            if request_points < 35:
+                return request_points
+
+            # If Where's My Navi beatable
+            if state.can_reach_region(RegionName.Undernet, self.player):
+                request_points += 4
+
+            # If One More Time. beatable
+            if state.can_reach_region(RegionName.Green_Overworld, self.player) and state.can_reach_region(RegionName.ACDC_Overworld, self.player):
+                request_points += 4
+
+            # If SupportChip Pls beatable
+            if state.can_reach_region(RegionName.Sky_Overworld, self.player) and \
+                    state.has_all({ItemName.Atk_30_star, ItemName.BblWrap_Q, ItemName.Geddon_A, ItemName.Recov80_H}, self.player) and \
+                    state.has(ItemName.Discord_S, self.player, 2):
+                request_points += 4
+
+            # If Negotiate! beatable
+            if state.can_reach_region(RegionName.Sky_Overworld, self.player) and \
+                    state.can_reach_region(RegionName.Undernet, self.player) and \
+                    state.can_reach_region(RegionName.Green_Overworld, self.player):
+                request_points += 4
+
+            # Max number of points: 75
             return request_points
 
         # Set Job additional area access
@@ -797,6 +829,10 @@ class MMBN6World(World):
             lambda state: \
                 state.can_reach_region(RegionName.Green_Overworld, self.player) and \
                 request_points_possible(state) >= 25
+
+        self.multiworld.get_location(LocationName.ProtoMan_FZ, self.player).access_rule = \
+            lambda state: \
+                request_points_possible(state) >= 75
 
         # Set Trade quests
         self.multiworld.get_location(LocationName.Central_Barr100_H_Trade, self.player).access_rule = \

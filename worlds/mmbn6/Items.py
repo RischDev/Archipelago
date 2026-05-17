@@ -142,7 +142,7 @@ keyItemList: typing.List[ItemData] = [
     ItemData(0xB610F3, ItemName.DustCross, ItemClassification.progression, ItemType.KeyItem, 60),
     # Renamed from SrialDat
     # ItemData(0x, ItemName.SciManul,		        ItemClassification.filler,	    ItemType.KeyItem, 	61),  #Reward for Self Research request, lotto code. Renamed to AP Item
-    ItemData(0xB610F8, ItemName.LkNvUpgd,		        ItemClassification.useful,	    ItemType.KeyItem, 	62),  #Reward for RodToSoulBtlr! request, lotto code. Renamed from SciManul
+    ItemData(0xB610F9, ItemName.LkNvUpgd,		        ItemClassification.useful,	    ItemType.KeyItem, 	62),  #Reward for RodToSoulBtlr! request, lotto code. Renamed from SciManul
     # ItemData(0x, ItemName.NaviRuin,		        ItemClassification.filler,	    ItemType.KeyItem, 	63),  #Needed in Where's My Navi request
     ItemData(0xB610F6, ItemName.BtlrCard,		        ItemClassification.progression,	    ItemType.KeyItem, 	64),  #Unlocks Virus Battler and rare viruses
     # ItemData(0x, ItemName.F.Fries,		            ItemClassification.filler,	    ItemType.KeyItem, 	65),  #Needed in Got a Problem. request
@@ -494,7 +494,8 @@ item_frequencies: typing.Dict[str, int] = {
     ItemName.zenny_3000z: 2,
     ItemName.zenny_5000z: 3,
     ItemName.zenny_100000z: 2,
-    ItemName.bugfrag_10: 2
+    ItemName.bugfrag_10: 2,
+    ItemName.LkNvUpgd: 4
 }
 
 item_groups: typing.Dict[str, typing.Set[str]] = {

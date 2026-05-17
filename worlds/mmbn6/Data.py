@@ -20,6 +20,6 @@ class MMBN6Data:
         # This is an arbitrary spot in the ROM data that is far enough out that it should not ever overwrite existing
         # data. It may need to change in the future. Reference the output of patch-rom.py to verify.
         # https://github.com/RischDev/bn6-ap-patch
-        self.rom_data_end = 0x810000
+        self.rom_data_end = 0x820000
 
 data = MMBN6Data()

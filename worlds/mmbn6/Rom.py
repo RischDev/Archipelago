@@ -429,7 +429,11 @@ def set_text_archive(world: "MMBN6World", location: "LocationData", address: "in
         archive = patch.changed_archives[address]
     else:
         address_key = hex(address).upper().replace("X", "x")
-        archive_data = data.gregar_archive_data[address_key]
+        archive_data = {}
+        if patch.game_version == "gregar":
+            archive_data = data.gregar_archive_data[address_key]
+        elif patch.game_version == "falzar":
+            archive_data = data.falzar_archive_data[address_key]
 
         is_compressed = archive_data["compressed"]
         size = archive_data["size"]
