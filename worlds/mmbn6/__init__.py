@@ -339,10 +339,6 @@ class MMBN6World(World):
                 lambda state: \
                     (state.has(ItemName.HeatCross, self.player) or
                      state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
-            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_3, self.player).access_rule = \
-                lambda state: \
-                    (state.has(ItemName.HeatCross, self.player) or
-                     state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
             self.multiworld.get_location(LocationName.Graveyard_BMD_3, self.player).access_rule = \
                 lambda state: \
                     (state.has(ItemName.HeatCross, self.player) or
@@ -363,6 +359,10 @@ class MMBN6World(World):
                       (state.has(ItemName.Umbrella, self.player) or
                        state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
                        state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or
+                     state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
             self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
                 lambda state: \
                     (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or
@@ -442,10 +442,6 @@ class MMBN6World(World):
                 lambda state: \
                     (state.has(ItemName.GroundCross, self.player) or
                      state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
-            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_3, self.player).access_rule = \
-                lambda state: \
-                    (state.has(ItemName.GroundCross, self.player) or
-                     state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
             self.multiworld.get_location(LocationName.Graveyard_BMD_3, self.player).access_rule = \
                 lambda state: \
                     (state.has(ItemName.GroundCross, self.player) or
@@ -466,6 +462,10 @@ class MMBN6World(World):
                       (state.has(ItemName.Umbrella, self.player) or
                        state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
                        state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player) or
+                     state.has_all({ItemName.DustCross, ItemName.Fish}, self.player))
             self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
                 lambda state: \
                     (state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player) or
@@ -574,7 +574,7 @@ class MMBN6World(World):
             lambda state: state.can_reach_region(RegionName.Green_Cyberworld, self.player)
 
         # Bass BX requires defeating Bass and Bass SP first, which means Green Cyberworld and Graveyard access is required.
-        self.multiworld.get_location(LocationName.Bass_SP, self.player).access_rule = \
+        self.multiworld.get_location(LocationName.Bass_BX, self.player).access_rule = \
             lambda state: state.can_reach_region(RegionName.Green_Cyberworld, self.player) and state.can_reach_region(RegionName.Graveyard, self.player)
 
         # Get the player's current possible request points based on accessible locations. This determines if a certain rank
