@@ -85,6 +85,7 @@ def int32_to_byte_list_le(x) -> bytearray:
 
 def int24_to_byte_list_le(x) -> bytearray:
     byte24_string = "{:06x}".format(x)
+    print(byte24_string)
     data = bytearray.fromhex(byte24_string)
     data.reverse()
     return data

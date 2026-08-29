@@ -40,6 +40,18 @@ class IncludeVirusBattler(Toggle):
     """
     display_name = "Include Virus Battler"
 
+class IncludeBassBX(Toggle):
+    """
+    Whether Bass BX can contain progression or useful items.
+    """
+    display_name = "Include Bass BX"
+
+class IncludeProtoManFZ(Toggle):
+    """
+    Whether ProtoMan FZ can contain progression or useful items.
+    """
+    display_name = "Include ProtoMan FZ"
+
 
 class TradeQuestHinting(Choice):
     """
@@ -63,4 +75,6 @@ class MMBN6Options(PerGameCommonOptions):
     include_ex_bosses: IncludeEXBosses
     include_sp_bosses: IncludeSPBosses
     include_virus_battler: IncludeVirusBattler
+    include_bass_bx: IncludeBassBX
+    include_protoman_fz: IncludeProtoManFZ
     trade_quest_hinting: TradeQuestHinting

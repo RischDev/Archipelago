@@ -210,6 +210,8 @@ class LocationName():
     Sky_1_Brown_Navi = "Sky 1 Brown Navi"
     Bass = "Bass"
     Bass_SP = "Bass SP"
+    Bass_BX = "Bass BX"
+    ProtoMan_FZ = "ProtoMan FZ"
     Talk_To_Mayl = "Talk To Mayl"
     ElecMan_Class = "ElecMan Class"
     SlashMan_Class = "SlashMan Class"
