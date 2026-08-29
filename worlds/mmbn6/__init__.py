@@ -983,11 +983,11 @@ class MMBN6World(World):
 
     def generate_output(self, output_directory: str) -> None:
         if self.options.game_version == GameVersion.option_gregar:
-            patch = MMBN6GregarProcedurePatch()
+            patch = MMBN6GregarProcedurePatch(player=self.player, player_name=self.player_name)
             patch.write_file("base_patch.bsdiff",
                              pkgutil.get_data(__name__, "data/bn6g-ap-patch.bsdiff"))
         else:
-            patch = MMBN6FalzarProcedurePatch()
+            patch = MMBN6FalzarProcedurePatch(player=self.player, player_name=self.player_name)
             patch.write_file("base_patch.bsdiff",
                              pkgutil.get_data(__name__, "data/bn6f-ap-patch.bsdiff"))
 

@@ -577,11 +577,6 @@ class MMBN6Client(BizHawkClient):
                 not (virus_battler_enabled_flag[0][0] == new_virus_battler_enabled_flag) or
                 not (rare_virus_flags1[0][0] == new_rare_virus_flags1) or
                 not (rare_virus_flags4[0][0] == new_rare_virus_flags4)):
-                print("Enabling Virus Battler progs")
-                print(f"{battler_machine_flags[0][0]} -> {new_battler_machine_flags}")
-                print(f"{virus_battler_enabled_flag[0][0]} -> {new_virus_battler_enabled_flag}")
-                print(f"{rare_virus_flags1[0][0]} -> {new_rare_virus_flags1}")
-                print(f"{rare_virus_flags4[0][0]} -> {new_rare_virus_flags4}")
                 await guarded_write(ctx.bizhawk_ctx, [(RAM_ADDRS["virus_battler_machine_flags"][0], [new_battler_machine_flags], "EWRAM"),
                                                       (RAM_ADDRS["virus_battler_enabled_flag"][0], [new_virus_battler_enabled_flag], "EWRAM"),
                                                       (RAM_ADDRS["rare_virus_flags1"][0], [new_rare_virus_flags1], "EWRAM"),
