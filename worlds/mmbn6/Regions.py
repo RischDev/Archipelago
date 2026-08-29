@@ -140,7 +140,8 @@ regions = [
                     LocationName.Lotto_Code_55,
                     LocationName.Lotto_Code_56,
                     LocationName.Lotto_Code_57,
-                    LocationName.Lotto_Code_58
+                    LocationName.Lotto_Code_58,
+                    LocationName.ProtoMan_FZ
                ]),
     RegionInfo(RegionName.Central_Cyberworld,
                [RegionName.Central3_and_Underground],
@@ -168,7 +169,8 @@ regions = [
                     LocationName.CircusMan_EX,
                     LocationName.Colonel_EX,
                     LocationName.CircusMan_SP,
-                    LocationName.Colonel_SP
+                    LocationName.Colonel_SP,
+                    LocationName.Bass_BX
                ]),
     RegionInfo(RegionName.Seaside_Overworld,
                [RegionName.Seaside_Cyberworld, RegionName.Central_Overworld, RegionName.Green_Overworld, RegionName.Sky_Overworld, RegionName.ACDC_Overworld],

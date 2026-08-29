@@ -1,13 +1,15 @@
 import os
+import pkgutil
+
 import settings
 import typing
 
-from BaseClasses import Item, MultiWorld, Tutorial, ItemClassification, Region, \
+from BaseClasses import Item, Tutorial, ItemClassification, Region, \
     LocationProgressType
 
 from worlds.AutoWorld import WebWorld, World
 
-from .Rom import MMBN6GregarDeltaPatch, MMBN6FalzarDeltaPatch, LocalRom, get_base_rom_path
+from .Rom import MMBN6GregarProcedurePatch, MMBN6FalzarProcedurePatch, write_tokens, MMBN6PatchData
 from .Items import MMBN6Item, ItemData, item_table, all_items, item_frequencies, items_by_id, ItemType, item_groups, \
     gregar_only_items, falzar_only_items
 from .Locations import MMBN6Location, all_locations, location_table, location_data_table, \
@@ -28,13 +30,13 @@ class MMBN6Settings(settings.Group):
         """File name of the MMBN6 Cybeast Gregar US rom"""
         copy_to = "Mega Man Battle Network 6 - Cybeast Gregar.gba"
         description = "MMBN6 Gregar ROM File"
-        md5s = [MMBN6GregarDeltaPatch.hash]
+        md5s = [MMBN6GregarProcedurePatch.hash]
 
     class FalzarRomFile(settings.UserFilePath):
         """File name of the MMBN6 Cybeast Falzar US rom"""
         copy_to = "Mega Man Battle Network 6 - Cybeast Falzar.gba"
         description = "MMBN6 Falzar ROM File"
-        md5s = [MMBN6FalzarDeltaPatch.hash]
+        md5s = [MMBN6FalzarProcedurePatch.hash]
 
     gregar_rom_file: GregarRomFile = GregarRomFile(GregarRomFile.copy_to)
     falzar_rom_file: FalzarRomFile = FalzarRomFile(FalzarRomFile.copy_to)
@@ -68,6 +70,8 @@ class MMBN6World(World):
     settings: typing.ClassVar[MMBN6Settings]
     topology_present = False
 
+    patch_data: MMBN6PatchData
+
     item_name_to_id = {name: data.code for name, data in item_table.items()}
     location_name_to_id = {loc_data.name: loc_data.id for loc_data in all_locations}
 
@@ -78,6 +82,10 @@ class MMBN6World(World):
     item_name_groups = item_groups
 
     web = MMBN6Web()
+
+    def __init__(self, multiworld, player):
+        super(MMBN6World, self).__init__(multiworld, player)
+        self.patch_data = MMBN6PatchData()
 
     def generate_early(self) -> None:
         """
@@ -97,6 +105,10 @@ class MMBN6World(World):
             self.excluded_locations |= sp_boss_locations
         if not self.options.include_virus_battler:
             self.excluded_locations |= virus_battler_locations
+        if not self.options.include_bass_bx:
+            self.excluded_locations.add(LocationName.Bass_BX)
+        if not self.options.include_protoman_fz:
+            self.excluded_locations.add(LocationName.ProtoMan_FZ)
 
     def create_regions(self) -> None:
         """
@@ -327,10 +339,6 @@ class MMBN6World(World):
                 lambda state: \
                     (state.has(ItemName.HeatCross, self.player) or
                      state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
-            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_3, self.player).access_rule = \
-                lambda state: \
-                    (state.has(ItemName.HeatCross, self.player) or
-                     state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player))
             self.multiworld.get_location(LocationName.Graveyard_BMD_3, self.player).access_rule = \
                 lambda state: \
                     (state.has(ItemName.HeatCross, self.player) or
@@ -351,6 +359,10 @@ class MMBN6World(World):
                       (state.has(ItemName.Umbrella, self.player) or
                        state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
                        state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or
+                     state.has_all({ItemName.ChargeCross, ItemName.Fish}, self.player))
             self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
                 lambda state: \
                     (state.has_all({ItemName.SlashCross, ItemName.AuthData}, self.player) or
@@ -430,10 +442,6 @@ class MMBN6World(World):
                 lambda state: \
                     (state.has(ItemName.GroundCross, self.player) or
                      state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
-            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_3, self.player).access_rule = \
-                lambda state: \
-                    (state.has(ItemName.GroundCross, self.player) or
-                     state.has_all({ItemName.TomahawkCross, ItemName.Umbrella}, self.player))
             self.multiworld.get_location(LocationName.Graveyard_BMD_3, self.player).access_rule = \
                 lambda state: \
                     (state.has(ItemName.GroundCross, self.player) or
@@ -454,6 +462,10 @@ class MMBN6World(World):
                       (state.has(ItemName.Umbrella, self.player) or
                        state.has_all({ItemName.VacData, ItemName.KeyData}, self.player) or
                        state.has_all({ItemName.VacData, ItemName.ToolPrgm}, self.player))))
+            self.multiworld.get_location(LocationName.Undernet_Zero_BMD_3, self.player).access_rule = \
+                lambda state: \
+                    (state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player) or
+                     state.has_all({ItemName.DustCross, ItemName.Fish}, self.player))
             self.multiworld.get_location(LocationName.Graveyard_BMD_4, self.player).access_rule = \
                 lambda state: \
                     (state.has_all({ItemName.TenguCross, ItemName.AuthData}, self.player) or
@@ -561,6 +573,10 @@ class MMBN6World(World):
         self.multiworld.get_location(LocationName.Bass_SP, self.player).access_rule = \
             lambda state: state.can_reach_region(RegionName.Green_Cyberworld, self.player)
 
+        # Bass BX requires defeating Bass and Bass SP first, which means Green Cyberworld and Graveyard access is required.
+        self.multiworld.get_location(LocationName.Bass_BX, self.player).access_rule = \
+            lambda state: state.can_reach_region(RegionName.Green_Cyberworld, self.player) and state.can_reach_region(RegionName.Graveyard, self.player)
+
         # Get the player's current possible request points based on accessible locations. This determines if a certain rank
         # is achievable to unlock higher star requests.
         def request_points_possible(state):
@@ -630,7 +646,7 @@ class MMBN6World(World):
             if state.has_all({ItemName.PoisSeed_P, ItemName.OrderSys, ItemName.Anubis_P}, self.player):
                 request_points += 2
 
-            # If not Rank B, then can't do more requests
+            # If not Rank A, then can't do more requests
             if request_points < 25:
                 return request_points
 
@@ -651,7 +667,31 @@ class MMBN6World(World):
             if state.can_reach_region(RegionName.Sky_Overworld, self.player):
                 request_points += 3
 
-            # At this point, if we have over 35 request points, all requests are available
+            # If not Rank S, then can't do more requests
+            if request_points < 35:
+                return request_points
+
+            # If Where's My Navi beatable
+            if state.can_reach_region(RegionName.Undernet, self.player):
+                request_points += 4
+
+            # If One More Time. beatable
+            if state.can_reach_region(RegionName.Green_Overworld, self.player) and state.can_reach_region(RegionName.ACDC_Overworld, self.player):
+                request_points += 4
+
+            # If SupportChip Pls beatable
+            if state.can_reach_region(RegionName.Sky_Overworld, self.player) and \
+                    state.has_all({ItemName.Atk_30_star, ItemName.BblWrap_Q, ItemName.Geddon_A, ItemName.Recov80_H}, self.player) and \
+                    state.has(ItemName.Discord_S, self.player, 2):
+                request_points += 4
+
+            # If Negotiate! beatable
+            if state.can_reach_region(RegionName.Sky_Overworld, self.player) and \
+                    state.can_reach_region(RegionName.Undernet, self.player) and \
+                    state.can_reach_region(RegionName.Green_Overworld, self.player):
+                request_points += 4
+
+            # Max number of points: 75
             return request_points
 
         # Set Job additional area access
@@ -789,6 +829,10 @@ class MMBN6World(World):
             lambda state: \
                 state.can_reach_region(RegionName.Green_Overworld, self.player) and \
                 request_points_possible(state) >= 25
+
+        self.multiworld.get_location(LocationName.ProtoMan_FZ, self.player).access_rule = \
+            lambda state: \
+                request_points_possible(state) >= 75
 
         # Set Trade quests
         self.multiworld.get_location(LocationName.Central_Barr100_H_Trade, self.player).access_rule = \
@@ -938,105 +982,26 @@ class MMBN6World(World):
             lambda state: state.has(ItemName.Victory, self.player)
 
     def generate_output(self, output_directory: str) -> None:
-        rompath: str = ""
+        if self.options.game_version == GameVersion.option_gregar:
+            patch = MMBN6GregarProcedurePatch(player=self.player, player_name=self.player_name)
+            patch.write_file("base_patch.bsdiff",
+                             pkgutil.get_data(__name__, "data/bn6g-ap-patch.bsdiff"))
+        else:
+            patch = MMBN6FalzarProcedurePatch(player=self.player, player_name=self.player_name)
+            patch.write_file("base_patch.bsdiff",
+                             pkgutil.get_data(__name__, "data/bn6f-ap-patch.bsdiff"))
 
-        try:
-            world = self.multiworld
-            player = self.player
-            game_version = self.options.game_version
+        game_version = self.options.game_version.current_key
+        self.patch_data.set_game_version(game_version)
+        item_hinting = self.options.trade_quest_hinting
+        self.patch_data.set_item_hinting(item_hinting)
 
-            rom = LocalRom(game_version=game_version.current_key)
+        write_tokens(self, self.player)
+        patch.write_file("token_data.bin", self.patch_data.get_token_bytes())
 
-            for location_name in location_table.keys():
-                # Skip locations from the opposite version
-                if self.options.game_version == GameVersion.option_gregar and location_name in falzar_only_locs:
-                    continue
-                elif self.options.game_version == GameVersion.option_falzar and location_name in gregar_only_locs:
-                    continue
-
-                location = world.get_location(location_name, player)
-                ap_item = location.item
-                item_id = ap_item.code
-
-                if item_id is not None:
-                    if ap_item.player != player or item_id not in items_by_id:
-                        item = ItemData(item_id, ap_item.name, ap_item.classification, ItemType.External)
-                        item = item._replace(recipient=self.multiworld.player_name[ap_item.player])
-                    else:
-                        item = items_by_id[item_id]
-
-                    location_data = location_data_table[location_name]
-
-                    # Update the address that needs to be changed based on version
-                    if game_version == GameVersion.option_gregar and location_name in gregar_update_addresses:
-                        offset = gregar_update_addresses[location_name]
-                    elif game_version == GameVersion.option_falzar and location_name in falzar_update_addresses:
-                        offset = falzar_update_addresses[location_name]
-                    else:
-                        offset = 0x00
-
-                    # print("Placing item "+item.itemName+" at location "+location_data.name)
-                    rom.replace_item(location_data, offset, item)
-                    if location_data.inject_name:
-                        item_name_text = "Item"
-                        long_item_text = ""
-
-                        # No item hinting
-                        if self.options.trade_quest_hinting == 0:
-                            item_name_text = "Check"
-                        # Partial item hinting
-                        elif self.options.trade_quest_hinting == 1:
-                            if item.progression == ItemClassification.progression \
-                                    or item.progression == ItemClassification.progression_skip_balancing:
-                                item_name_text = "Progress"
-                            elif item.progression == ItemClassification.useful \
-                                    or item.progression == ItemClassification.trap:
-                                item_name_text = "Item"
-                            else:
-                                item_name_text = "Garbage"
-
-                            if item.recipient == 'Myself':
-                                item_name_text = "Your " + item_name_text
-                            else:
-                                item_name_text = item.recipient + "'s " + item_name_text
-                        # Full item hinting
-                        else:
-                            owners_name = "Your" if item.recipient == 'Myself' else item.recipient + "'s"
-                            if item.recipient == "Myself":
-                                long_item_text = f"It's {owners_name} \n\"{item.itemName}\"!!"
-                            else:
-                                # To keep things consistent, only specify "AP Item" in game
-                                long_item_text = f"It's {owners_name} \n\"AP Item\"!!"
-
-                        rom.insert_hint_text(location_data, offset, item_name_text, long_item_text)
-
-            rom.inject_name(world.player_name[player])
-
-            rompath = os.path.join(output_directory, f"{self.multiworld.get_out_file_name_base(self.player)}.gba")
-
-            rom.write_changed_rom()
-            rom.write_to_file(rompath)
-
-            if self.options.game_version == GameVersion.option_gregar:
-                patch = MMBN6GregarDeltaPatch(os.path.splitext(rompath)[0] + MMBN6GregarDeltaPatch.patch_file_ending, player=player,
-                                    player_name=world.player_name[player], patched_path=rompath)
-            else:
-                patch = MMBN6FalzarDeltaPatch(os.path.splitext(rompath)[0] + MMBN6FalzarDeltaPatch.patch_file_ending,
-                                              player=player,
-                                              player_name=world.player_name[player], patched_path=rompath)
-            patch.write()
-        except:
-            raise
-        finally:
-            if os.path.exists(rompath):
-                os.unlink(rompath)
-
-    @classmethod
-    def stage_assert_generate(cls, multiworld: "MultiWorld") -> None:
-        for world in multiworld.get_game_worlds("MegaMan Battle Network 6"):
-            rom_file = get_base_rom_path(game_version=world.options.game_version.current_key)
-            if not os.path.exists(rom_file):
-                raise FileNotFoundError(rom_file)
+        # Write output
+        out_file_name = self.multiworld.get_out_file_name_base(self.player)
+        patch.write(os.path.join(output_directory, f"{out_file_name}{patch.patch_file_ending}"))
 
     def create_item(self, name: str) -> "Item":
         item = item_table[name]

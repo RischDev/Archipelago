@@ -71,7 +71,9 @@ RAM_ADDRS = {
     "virus_battler_machine_flags": (0x1CC2, 1, "EWRAM"),
     "virus_battler_enabled_flag": (0x1CC3, 1, "EWRAM"),
     "rare_virus_flags1": (0x1CBA, 1, "EWRAM"),
-    "rare_virus_flags4": (0x1CBD, 1, "EWRAM")
+    "rare_virus_flags4": (0x1CBD, 1, "EWRAM"),
+    # Note: This is not the original flag location, these are re-purposed flags
+    "link_navi_upgrade_flags": (0x1D14, 1, "EWRAM")
 }
 
 SPECIAL_KEY_ITEMS = {
@@ -86,6 +88,7 @@ SPECIAL_KEY_ITEMS = {
     "TomahawkCross": 56,
     "GroundCross": 58,
     "DustCross": 60,
+    "LkNvUpgd": 62,
     "BtlrCard": 64
 }
 
@@ -574,11 +577,6 @@ class MMBN6Client(BizHawkClient):
                 not (virus_battler_enabled_flag[0][0] == new_virus_battler_enabled_flag) or
                 not (rare_virus_flags1[0][0] == new_rare_virus_flags1) or
                 not (rare_virus_flags4[0][0] == new_rare_virus_flags4)):
-                print("Enabling Virus Battler progs")
-                print(f"{battler_machine_flags[0][0]} -> {new_battler_machine_flags}")
-                print(f"{virus_battler_enabled_flag[0][0]} -> {new_virus_battler_enabled_flag}")
-                print(f"{rare_virus_flags1[0][0]} -> {new_rare_virus_flags1}")
-                print(f"{rare_virus_flags4[0][0]} -> {new_rare_virus_flags4}")
                 await guarded_write(ctx.bizhawk_ctx, [(RAM_ADDRS["virus_battler_machine_flags"][0], [new_battler_machine_flags], "EWRAM"),
                                                       (RAM_ADDRS["virus_battler_enabled_flag"][0], [new_virus_battler_enabled_flag], "EWRAM"),
                                                       (RAM_ADDRS["rare_virus_flags1"][0], [new_rare_virus_flags1], "EWRAM"),
@@ -587,6 +585,32 @@ class MMBN6Client(BizHawkClient):
                                      (RAM_ADDRS["virus_battler_enabled_flag"][0], virus_battler_enabled_flag[0], "EWRAM"),
                                      (RAM_ADDRS["rare_virus_flags1"][0], rare_virus_flags1[0], "EWRAM"),
                                      (RAM_ADDRS["rare_virus_flags4"][0], rare_virus_flags4[0], "EWRAM")])
+
+        # For each Link Navi Upgrade, set the proper flags
+        link_navi_upgrades = await read(ctx.bizhawk_ctx,
+                              [(RAM_ADDRS["key_item_amount_start"][0] + SPECIAL_KEY_ITEMS["LkNvUpgd"], 1,
+                                "EWRAM")])
+
+        if link_navi_upgrades[0][0] > 0:
+            link_navi_upgrade_flags = await read(ctx.bizhawk_ctx, [RAM_ADDRS["link_navi_upgrade_flags"]])
+            new_flag_val = 0x00
+            match link_navi_upgrades[0][0]:
+                case 1:
+                    new_flag_val = 0x20
+                case 2:
+                    new_flag_val = 0x30
+                case 3:
+                    new_flag_val = 0x38
+                case 4:
+                    new_flag_val = 0x3C
+                case _:
+                    new_flag_val = 0x3C
+
+            if link_navi_upgrade_flags[0][0] != new_flag_val:
+                await guarded_write(ctx.bizhawk_ctx, [(RAM_ADDRS["link_navi_upgrade_flags"][0], [new_flag_val], "EWRAM")],
+                                    [(RAM_ADDRS["link_navi_upgrade_flags"][0], link_navi_upgrade_flags[0], "EWRAM")])
+
+
 
     @staticmethod
     async def check_location_scouted(ctx, location):

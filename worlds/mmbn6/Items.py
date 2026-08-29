@@ -142,7 +142,7 @@ keyItemList: typing.List[ItemData] = [
     ItemData(0xB610F3, ItemName.DustCross, ItemClassification.progression, ItemType.KeyItem, 60),
     # Renamed from SrialDat
     # ItemData(0x, ItemName.SciManul,		        ItemClassification.filler,	    ItemType.KeyItem, 	61),  #Reward for Self Research request, lotto code. Renamed to AP Item
-    # ItemData(0x, ItemName.SoulEmbl,		        ItemClassification.filler,	    ItemType.KeyItem, 	62),  #Reward for RodToSoulBtlr! request, lotto code
+    ItemData(0xB610F9, ItemName.LkNvUpgd,		        ItemClassification.useful,	    ItemType.KeyItem, 	62),  #Reward for RodToSoulBtlr! request, lotto code. Renamed from SciManul
     # ItemData(0x, ItemName.NaviRuin,		        ItemClassification.filler,	    ItemType.KeyItem, 	63),  #Needed in Where's My Navi request
     ItemData(0xB610F6, ItemName.BtlrCard,		        ItemClassification.progression,	    ItemType.KeyItem, 	64),  #Unlocks Virus Battler and rare viruses
     # ItemData(0x, ItemName.F.Fries,		            ItemClassification.filler,	    ItemType.KeyItem, 	65),  #Needed in Got a Problem. request
@@ -350,7 +350,9 @@ chipList: typing.List[ItemData] = [
     ItemData(0xB61098, ItemName.YoYo_N, ItemClassification.filler, ItemType.Chip, 19, chip_code('N')),  # BMD
     ItemData(0xB61099, ItemName.YoYo_star, ItemClassification.filler, ItemType.Chip, 19, chip_code('*')),  # BMD
     ItemData(0xB610F4, ItemName.Bass_F, ItemClassification.useful, ItemType.Chip, 301, chip_code('F')),  # Bass SP
-    ItemData(0xB610F5, ItemName.BassAnly_F, ItemClassification.useful, ItemType.Chip, 306, chip_code('F'))  # Bass SP
+    ItemData(0xB610F5, ItemName.BassAnly_F, ItemClassification.useful, ItemType.Chip, 306, chip_code('F')),  # Bass SP
+    ItemData(0xB610F7, ItemName.ColForce_Q, ItemClassification.useful, ItemType.Chip, 304, chip_code('Q')),  # Bass BX
+    ItemData(0xB610F8, ItemName.HubBatc_J, ItemClassification.useful, ItemType.Chip, 309, chip_code('J'))  # Bass BX
 ]
 
 secretChipList: typing.List[ItemData] = [
@@ -492,7 +494,8 @@ item_frequencies: typing.Dict[str, int] = {
     ItemName.zenny_3000z: 2,
     ItemName.zenny_5000z: 3,
     ItemName.zenny_100000z: 2,
-    ItemName.bugfrag_10: 2
+    ItemName.bugfrag_10: 2,
+    ItemName.LkNvUpgd: 4
 }
 
 item_groups: typing.Dict[str, typing.Set[str]] = {
@@ -511,7 +514,8 @@ gregar_only_items = {
     ItemName.SlashCross,
     ItemName.EraseCross,
     ItemName.ChargeCross,
-    ItemName.Bass_F
+    ItemName.Bass_F,
+    ItemName.ColForce_Q
 }
 
 falzar_only_items = {
@@ -520,7 +524,8 @@ falzar_only_items = {
     ItemName.TenguCross,
     ItemName.GroundCross,
     ItemName.DustCross,
-    ItemName.BassAnly_F
+    ItemName.BassAnly_F,
+    ItemName.HubBatc_J
 }
 
 all_items: typing.List[
@@ -557,6 +562,7 @@ chips_amount_index: typing.Dict[str, int] = {
     ItemName.CircGun_P: 1692,
     ItemName.ColArmy_star: 2367,
     ItemName.ColArmy_B: 2364,
+    ItemName.ColForce_Q: 3636,
     ItemName.Colonel_star: 3253,
     ItemName.ColorPt_star: 2316,
     ItemName.ComingRd_star: 2028,
@@ -593,6 +599,7 @@ chips_amount_index: typing.Dict[str, int] = {
     ItemName.HiCannon_L: 12,
     ItemName.HolyPanl_A: 2004,
     ItemName.HolyPanl_S: 2006,
+    ItemName.HubBatc_J: 3696,
     ItemName.IceSeed_A: 816,
     ItemName.IceSeed_star: 819,
     ItemName.JudgeMan_star: 3181,
